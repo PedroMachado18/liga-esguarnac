@@ -81,9 +81,63 @@ th.ordenable:hover { background-color: #322a9a; }
   button:hover {
     background-color: #2ecc71;
   }
+  /* --- DISEÑO DE PESTAÑAS --- */
+.menu-pestanas {
+  display: flex;
+  overflow-x: auto; /* Permite deslizar con el dedo en celulares */
+  gap: 20px;
+  border-bottom: 2px solid #ecf0f1;
+  margin-bottom: 25px;
+  padding-bottom: 5px;
+}
+
+.tab-btn {
+  background: none;
+  color: #7f8c8d; /* Gris apagado */
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 5px;
+  cursor: pointer;
+  white-space: nowrap; /* Evita que el texto se rompa en dos líneas */
+  border-radius: 0;
+}
+
+/* Estado del botón cuando está seleccionado */
+.tab-btn:hover {
+  background: none;
+  color: #2c3e50;
+}
+
+.tab-btn.activo {
+  color: #e67e22; /* Color naranja destacado */
+  border-bottom: 3px solid #e67e22;
+}
+
+/* Ocultar secciones por defecto */
+.oculto {
+  display: none !important;
+}
 </style>
 </head>
 <body>
+    <!-- Menú de navegación -->
+<nav class="menu-pestanas">
+  <button class="tab-btn activo" onclick="cambiarPestana(event, 'resumen')">🏆 Resumen del Torneo</button>
+  <button class="tab-btn" onclick="cambiarPestana(event, 'equipos')">👥 Estadísticas de Equipos</button>
+</nav>
+
+<!-- SECCIÓN 1: Resumen (Tabla de posiciones) -->
+<div id="resumen" class="seccion-tab">
+  <h2>Tabla de Posiciones</h2>
+  <!-- Aquí va el código de tu tabla de posiciones -->
+</div>
+
+<!-- SECCIÓN 2: Equipos (Bateadores y Pitchers) -->
+<div id="equipos" class="seccion-tab oculto">
+  <h2>Estadísticas de Jugadores</h2>
+  <!-- Aquí van tus tablas y formularios de Bateadores y Pitchers -->
+</div>
 
 <div class="contenedor">
     <h2>Equipo 1. Armar Equipo y Registrar Jugador</h2>
@@ -273,7 +327,19 @@ th.ordenable:hover { background-color: #322a9a; }
         </tbody>
     </table>
 <script>
-    
+    function cambiarPestana(evento, idSeccion) {
+  // 1. Ocultar todas las secciones
+  const secciones = document.querySelectorAll('.seccion-tab');
+  secciones.forEach(seccion => seccion.classList.add('oculto'));
+
+  // 2. Quitar el color naranja a todos los botones
+  const botones = document.querySelectorAll('.tab-btn');
+  botones.forEach(boton => boton.classList.remove('activo'));
+
+  // 3. Mostrar la sección elegida y pintar su botón de naranja
+  document.getElementById(idSeccion).classList.remove('oculto');
+  evento.currentTarget.classList.add('activo');
+}
 // Equipo 1. Función para cargar y dibujar la tabla
 // Equipo 1. Función para cargar y dibujar la tabla con filtro
 async function cargarJugadores() {
