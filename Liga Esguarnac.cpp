@@ -433,6 +433,6 @@ svr.Post("/api/registrar_pitcher", [](const httplib::Request& req, httplib::Resp
         guardarDatos();
         res.set_content("{\"status\":\"ok\"}", "application/json");
     });
-    svr.listen("localhost", 8080);
+    svr.listen("0.0.0.0", 8080);
     return 0;
 }
