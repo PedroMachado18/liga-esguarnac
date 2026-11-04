@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Equipos y Estadísticas</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; padding: 20px; }
+        .contenedor { max-width: 900px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h2 { color: #1e5631; border-bottom: 2px solid #1e5631; padding-bottom: 10px; font-size: 20px; }
+        
+        /* Estilos del Formulario */
+        .formulario { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 25px; }
+        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        button { background-color: #1e5631; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; grid-column: span 2; }
+        button:hover { background-color: #4c9a2a; }
+        
+        /* Estilos de la Tabla */
+        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+        th, td { border: 1px solid #e0e0e0; padding: 10px; text-align: center; }
+        th { background-color: #1e5631; color: white; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+
+<div class="contenedor">
+    <h2>1. Armar Equipo y Registrar Jugador</h2>
+    
+    <!-- Formulario de entrada -->
+    <div class="formulario">
+        <input type="text" id="nombre" placeholder="Nombre del Jugador" required>
+        <select id="equipo">
+            <option value="Exodo">Exodo</option>
+            <option value="Comanches">Comanches</option>
+            <option value="Ingenieros">Ingenieros</option>
+        </select>
+        <input type="number" id="tb" placeholder="Turnos (TB)" min="0">
+        <input type="number" id="h" placeholder="Hits (H)" min="0">
+        <input type="number" id="d2b" placeholder="Dobles (2B)" min="0">
+        <input type="number" id="d3b" placeholder="Triples (3B)" min="0">
+        <input type="number" id="hr" placeholder="Jonrones (HR)" min="0">
+        <button onclick="agregarJugador()">Añadir al Roster</button>
+    </div>
+
+    <h2>2. Roster y Estadísticas Actualizadas</h2>
+    
+    <!-- Tabla de visualización -->
+    <table>
+        <thead>
+            <tr>
+                <th>Jugador</th>
+                <th>Equipo</th>
+                <th>TB</th>
+                <th>H</th>
+                <th>2B</th>
+                <th>3B</th>
+                <th>HR</th>
+                <th>AVG</th>
+                <th>SLG</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-jugadores">
+            <!-- Las filas se insertarán dinámicamente aquí -->
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Lógica temporal para ver cómo funcionará la tabla. 
+    // En el futuro, estos datos llegarán desde tu código C++.
+    function agregarJugador() {
+        const nombre = document.getElementById('nombre').value;
+        const equipo = document.getElementById('equipo').value;
+        const tb = parseInt(document.getElementById('tb').value) || 0;
+        const h = parseInt(document.getElementById('h').value) || 0;
+        const d2b = parseInt(document.getElementById('d2b').value) || 0;
+        const d3b = parseInt(document.getElementById('d3b').value) || 0;
+        const hr = parseInt(document.getElementById('hr').value) || 0;
+
+        if(!nombre) { 
+            alert("Por favor, ingresa el nombre del jugador"); 
+            return; 
+        }
+
+        // Fórmulas matemáticas (las mismas que tienes en C++)
+        const avg = tb > 0 ? (h / tb).toFixed(3) : "0.000";
+        const sencillos = h - (d2b + d3b + hr);
+        const basesTotales = sencillos + (2 * d2b) + (3 * d3b) + (4 * hr);
+        const slg = tb > 0 ? (basesTotales / tb).toFixed(3) : "0.000";
+
+        // Inyectar HTML en la tabla
+        const tabla = document.getElementById('tabla-jugadores');
+        const fila = `<tr>
+            <td>${nombre}</td>
+            <td>${equipo}</td>
+            <td>${tb}</td>
+            <td>${h}</td>
+            <td>${d2b}</td>
+            <td>${d3b}</td>
+            <td>${hr}</td>
+            <td><strong>${avg}</strong></td>
+            <td><strong>${slg}</strong></td>
+        </tr>`;
+        
+        tabla.innerHTML += fila;
+
+        // Limpiar los campos numéricos después de agregar
+        const inputs = document.querySelectorAll('input[type="number"], input[type="text"]');
+        inputs.forEach(input => input.value = '');
+    }
+</script>
+
+</body>
+</html>

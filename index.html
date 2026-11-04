@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=Equipo 1.0">
+    <title>Gestión de Equipos y Estadísticas</title>
+    <style>
+        th.ordenable { cursor: pointer; text-decoration: underline; }
+th.ordenable:hover { background-color: #322a9a; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; padding: 20px; }
+        .contenedor { max-width: 900px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.Equipo 1); }
+        h2 { color: #1e5631; border-bottom: 2px solid #1e5631; padding-bottom: 10px; font-size: 20px; }
+        
+        /* Estilos del Formulario */
+        .formulario { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 25px; }
+        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        button { background-color: #1e5631; color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; grid-column: span Equipo 2; }
+        button:hover { background-color: #322a9a; }
+        
+        /* Estilos de la Tabla */
+        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+        th, td { border: 1px solid #e0e0e0; padding: 10px; text-align: center; }
+        th { background-color: #1e5631; color: white; font-weight: bold; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+
+<div class="contenedor">
+    <h2>Equipo 1. Armar Equipo y Registrar Jugador</h2>
+    
+    <!-- Formulario de entrada -->
+    <div class="formulario">
+        <input type="text" id="nombre" placeholder="Nombre del Jugador" required>
+        <select id="equipo">
+            <option value="Equipo 1">Equipo 1</option>
+            <option value="Equipo 2">Equipo 2</option>
+            <option value="Equipo 3">Equipo 3</option>
+            <option value="Equipo 4">Equipo 4</option>
+            <option value="Equipo 5">Equipo 5</option>
+            <option value="Equipo 6">Equipo 6</option>
+            <option value="Equipo 7">Equipo 7</option>
+            <option value="Equipo 8">Equipo 8</option>
+        </select>
+        <input type="number" id="tb" placeholder="Turnos (TB)" min="0">
+        <input type="number" id="h" placeholder="Hits (H)" min="0">
+        <input type="number" id="d2b" placeholder="Dobles (2B)" min="0">
+        <input type="number" id="d3b" placeholder="Triples (3B)" min="0">
+        <input type="number" id="hr" placeholder="Jonrones (HR)" min="0">
+        <input type="number" id="bb" placeholder="BB" min="0">
+        <input type="number" id="ci" placeholder="CI" min="0">
+        <input type="number" id="ca" placeholder="CA" min="0">
+        <input type="number" id="k" placeholder="K" min="0">
+        <button onclick="agregarJugador()">Añadir al Roster</button>
+    </div>
+
+    <h2>Equipo 2. Roster y Estadísticas Actualizadas</h2>
+    
+    <!-- Filtro por equipo -->
+    <!-- Filtro y Ordenamiento -->
+<!-- Filtro Global y Ordenamiento de Bateadores -->
+    <div style="margin-bottom: 15px; background: #e9ecef; padding: 10px; border-radius: 5px;">
+        <label for="filtro-equipo" style="font-weight: bold; color: #1e5631;">Filtrar por Equipo (Global):</label>
+        <!-- Al cambiar este filtro, se recargan ambas tablas -->
+        <select id="filtro-equipo" onchange="cargarJugadores(); cargarPitchers();" style="margin-left: 10px; padding: 5px;">
+            <option value="Todos">Todos los equipos</option>
+            <option value="Equipo 1">Equipo 1</option>
+            <option value="Equipo 2">Equipo 2</option>
+            <option value="Equipo 3">Equipo 3</option>
+            <option value="Equipo 4">Equipo 4</option>
+            <option value="Equipo 5">Equipo 5</option>
+            <option value="Equipo 6">Equipo 6</option>
+            <option value="Equipo 7">Equipo 7</option>
+            <option value="Equipo 8">Equipo 8</option>
+        </select>
+
+<label for="ordenar-por" style="font-weight: bold; color: #1e5631; margin-left: 20px;">Ordenar Bateadores por:</label>
+        <select id="ordenar-por" onchange="cargarJugadores()" style="margin-left: 10px; padding: 5px;">
+            <option value="defecto">Orden de registro</option>
+            <option value="avg">AVG (Mayor a Menor)</option>
+            <option value="slg">SLG (Mayor a Menor)</option>
+            <option value="tb">Bases Totales - TB (Mayor a Menor)</option>
+            <option value="h">Hits - H (Mayor a Menor)</option>
+            <option value="d2b">Dobles - 2B (Mayor a Menor)</option>
+            <option value="d3b">Triples - 3B (Mayor a Menor)</option>
+            <option value="hr">Jonrones - HR (Mayor a Menor)</option>
+            <option value="bb">Boletos - BB (Mayor a Menor)</option>
+            <option value="ci">Impulsadas - CI (Mayor a Menor)</option>
+            <option value="ca">Anotadas - CA (Mayor a Menor)</option>
+            <option value="k">Ponches - K (Mayor a Menor)</option>
+        </select>
+    </div>
+    <!-- Tabla de visualización -->
+    <table>
+        <thead>
+    <tr>
+        <th>Jugador</th>
+        <th>Equipo</th>
+        <th class="ordenable" onclick="ordenarTabla('tb')">TB ↕</th>
+        <th class="ordenable" onclick="ordenarTabla('h')">H ↕</th>
+        <th class="ordenable" onclick="ordenarTabla('d2b')">2B ↕</th>
+        <th class="ordenable" onclick="ordenarTabla('d3b')">3B ↕</th>
+        <th class="ordenable" onclick="ordenarTabla('hr')">HR ↕</th>
+        <th class="ordenable" onclick="ordenarTabla('bb')">BB ↕</th>
+        <th class="ordenable" onclick="ordenarTabla('ci')">CI ↕</th>
+        <th class="ordenable" onclick="ordenarTabla('ca')">CA ↕</th>
+        <th class="ordenable" onclick="ordenarTabla('k')">K ↕</th>
+        <th class="ordenable" onclick="ordenarTabla('avg')">AVG ↕</th>
+        <th class="ordenable" onclick="ordenarTabla('slg')">SLG ↕</th>
+    </tr>
+</thead>
+        <tbody id="tabla-jugadores">
+            <!-- Las filas se insertarán dinámicamente aquí -->
+        </tbody>
+    </table>
+</div>
+<h2 style="margin-top: 40px;">3. Registro y Estadísticas de Lanzadores (Pitchers)</h2>
+    <!-- Menú para ordenar Pitchers -->
+    <div style="margin-bottom: 15px; background: #e9ecef; padding: 10px; border-radius: 5px;">
+        <label for="ordenar-por-p" style="font-weight: bold; color: #1e5631;">Ordenar Pitchers por:</label>
+        <select id="ordenar-por-p" onchange="cargarPitchers()" style="margin-left: 10px; padding: 5px;">
+            <option value="defecto">Orden de registro</option>
+            <option value="ip">Innings Lanzados - IP (Mayor a Menor)</option>
+            <option value="k">Ponches - K (Mayor a Menor)</option>
+            <option value="g">Ganados - G (Mayor a Menor)</option>
+            <option value="p">Perdidos - P (Mayor a Menor)</option>
+            <option value="cl">Carreras Limpias - CL (Mayor a Menor)</option>
+            <option value="cs">Carreras Sucias - CS (Mayor a Menor)</option>
+            <option value="era">Efectividad - ERA (Menor a Mayor)</option>
+        </select>
+    </div>
+    <!-- Formulario de Pitchers -->
+    <div class="formulario">
+        <input type="text" id="nombre-p" placeholder="Nombre del Pitcher" required>
+        <select id="equipo-p">
+            <option value="Equipo 1">Equipo 1</option>
+            <option value="Equipo 2">Equipo 2</option>
+            <option value="Equipo 3">Equipo 3</option>
+            <option value="Equipo 4">Equipo 4</option>
+            <option value="Equipo 5">Equipo 5</option>
+            <option value="Equipo 6">Equipo 6</option>
+            <option value="Equipo 7">Equipo 7</option>
+            <option value="Equipo 8">Equipo 8</option>
+        </select>
+        <!-- step="0.1" permite registrar tercios de inning como 1.1 o 1.2 -->
+        <input type="number" step="0.1" id="ip" placeholder="Innings (IP)" min="0">
+        <input type="number" id="k-p" placeholder="Ponches (K)" min="0">
+        <input type="number" id="cl" placeholder="Limpias (CL)" min="0">
+        <input type="number" id="cs" placeholder="Sucias (CS)" min="0">
+        <input type="number" id="g" placeholder="Ganados (G)" min="0">
+        <input type="number" id="p" placeholder="Perdidos (P)" min="0">
+        <button onclick="agregarPitcher()">Añadir Lanzador</button>
+    </div>
+
+    <!-- Tabla de Pitchers -->
+    <table>
+        <thead>
+            <tr>
+                <th>Pitcher</th>
+                <th>Equipo</th>
+                <th>IP</th>
+                <th>K</th>
+                <th>CL</th>
+                <th>CS</th>
+                <th>G</th>
+                <th>P</th>
+                <th>ERA (Efectividad)</th>
+                <th>Acciones</th> <!-- Nueva columna -->
+            </tr>
+            </tr>
+        </thead>
+        <tbody id="tabla-pitchers">
+            <!-- Filas dinámicas de pitchers -->
+        </tbody>
+    </table>
+
+<h2 style="margin-top: 40px;">4. Tabla de Posiciones (Equipos)</h2>
+    
+    <div class="formulario">
+        <select id="nombre-equipo">
+            <option value="Equipo 1">Equipo 1</option>
+            <option value="Equipo 2">Equipo 2</option>
+            <option value="Equipo 3">Equipo 3</option>
+            <option value="Equipo 4">Equipo 4</option>
+            <option value="Equipo 5">Equipo 5</option>
+            <option value="Equipo 6">Equipo 6</option>
+            <option value="Equipo 7">Equipo 7</option>
+            <option value="Equipo 8">Equipo 8</option>
+        </select>
+        <input type="number" id="eq-jg" placeholder="Ganados (JG)" min="0">
+        <input type="number" id="eq-jp" placeholder="Perdidos (JP)" min="0">
+        <input type="number" id="eq-je" placeholder="Empates (JE)" min="0"> <!-- NUEVO -->
+        <input type="number" id="eq-cf" placeholder="A Favor (CF)" min="0">
+        <input type="number" id="eq-cc" placeholder="En Contra (CC)" min="0">
+        <button onclick="actualizarEquipo()">Sumar al Récord</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Equipo</th>
+                <th>JG</th>
+                <th>JP</th>
+                <th>JE</th> <!-- NUEVO -->
+                <th>CF</th>
+                <th>CC</th>
+                <th style="background-color: #322a9a;">PTS</th> <!-- NUEVO PUNTOS -->
+                <th>Acción</th>
+            </tr>
+            
+        </thead>
+        <tbody id="tabla-equipos">
+            <!-- Filas de equipos -->
+        </tbody>
+    </table>
+<script>
+    
+// Equipo 1. Función para cargar y dibujar la tabla
+// Equipo 1. Función para cargar y dibujar la tabla con filtro
+async function cargarJugadores() {
+    try {
+        const respuesta = await fetch('http://localhost:8080/api/jugadores');
+        let datos = await respuesta.json();
+        
+        const equipoSeleccionado = document.getElementById('filtro-equipo').value;
+        const criterioOrden = document.getElementById('ordenar-por') ? document.getElementById('ordenar-por').value : 'defecto';
+        
+        // Equipo 1. Aplicar el filtro por equipo
+        // Equipo 1. Aplicar el filtro por equipo
+// 1. Aplicar el filtro por equipo
+        if (equipoSeleccionado !== "Todos") {
+            datos = datos.filter(jugador => jugador.equipo === equipoSeleccionado);
+        }
+
+        // 2. Ordenamiento dinámico inteligente
+        if (criterioOrden !== 'defecto') {
+            datos.sort((a, b) => b[criterioOrden] - a[criterioOrden]);
+        }
+
+        // 3. NUEVO: Limitar a 10 jugadores si el filtro es "Todos"
+        if (equipoSeleccionado === "Todos") {
+            datos = datos.slice(0, 10);
+        }
+        
+        const tabla = document.getElementById('tabla-jugadores');
+        tabla.innerHTML = ''; 
+        
+        // Equipo 3. Dibujar la tabla ya filtrada y ordenada
+        datos.forEach(jugador => {
+            const fila = `<tr>
+                <td>${jugador.nombre}</td>
+                <td>${jugador.equipo || '-'}</td>
+                <td>${jugador.tb}</td>
+                <td>${jugador.h}</td>
+                <td>${jugador.d2b}</td>
+                <td>${jugador.d3b}</td>
+                <td>${jugador.hr}</td>
+                <td>${jugador.bb || 0}</td>
+                <td>${jugador.ci || 0}</td>
+                <td>${jugador.ca || 0}</td>
+                <td>${jugador.k || 0}</td>
+                <td><strong>${Number(jugador.avg).toFixed(3)}</strong></td>
+                <td><strong>${Number(jugador.slg).toFixed(3)}</strong></td>
+                <td>
+                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer; margin-right: 5px;" onclick="modificarJugador('${jugador.nombre}', '${jugador.equipo}')">Editar</button>
+                    <button style="background-color: #d32f2f; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;" onclick="eliminarJugador('${jugador.nombre}', '${jugador.equipo}')">Borrar</button>
+                </td>
+            </tr>`;
+            tabla.innerHTML += fila;
+        });
+    } catch (error) {
+        console.error("Error cargando jugadores:", error);
+    }
+}
+
+// Equipo 2. Función para registrar jugador
+async function agregarJugador() {
+    const payload = {
+        nombre: document.getElementById('nombre').value,
+        equipo: document.getElementById('equipo').value,
+        tb: parseInt(document.getElementById('tb').value) || 0,
+        h: parseInt(document.getElementById('h').value) || 0,
+        d2b: parseInt(document.getElementById('d2b').value) || 0,
+        d3b: parseInt(document.getElementById('d3b').value) || 0,
+        hr: parseInt(document.getElementById('hr').value) || 0,
+        bb: parseInt(document.getElementById('bb').value) || 0,
+        ci: parseInt(document.getElementById('ci').value) || 0,
+        ca: parseInt(document.getElementById('ca').value) || 0,
+        k: parseInt(document.getElementById('k').value) || 0
+    };
+
+    if(!payload.nombre) { 
+        alert("Por favor, ingresa el nombre"); return; 
+    }
+
+    try {
+        await fetch('http://localhost:8080/api/registrar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const inputs = document.querySelectorAll('input[type="number"], input[type="text"]');
+        inputs.forEach(input => input.value = '');
+        await cargarJugadores();
+    } catch(error) {
+        console.error("Error al registrar:", error);
+    }
+}
+
+// Equipo 3. Función independiente para eliminar
+async function eliminarJugador(nombreJugador, equipoJugador) {
+    if (!confirm(`¿Estás seguro de eliminar a ${nombreJugador} del equipo ${equipoJugador}?`)) return;
+
+    try {
+        await fetch('http://localhost:8080/api/eliminar', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre: nombreJugador, equipo: equipoJugador })
+        });
+        await cargarJugadores();
+    } catch(error) {
+        console.error("Error al eliminar:", error);
+    }
+}
+async function modificarJugador(nombreJugador, equipoJugador) {
+    // Toma los nuevos números directamente desde las casillas del formulario
+    const payload = {
+        nombre: nombreJugador,
+        equipo: equipoJugador,
+        tb: parseInt(document.getElementById('tb').value) || 0,
+        h: parseInt(document.getElementById('h').value) || 0,
+        d2b: parseInt(document.getElementById('d2b').value) || 0,
+        d3b: parseInt(document.getElementById('d3b').value) || 0,
+        hr: parseInt(document.getElementById('hr').value) || 0,
+        bb: parseInt(document.getElementById('bb').value) || 0,
+        ci: parseInt(document.getElementById('ci').value) || 0,
+        ca: parseInt(document.getElementById('ca').value) || 0,
+        k: parseInt(document.getElementById('k').value) || 0
+    };
+
+    try {
+        await fetch('http://localhost:8080/api/modificar', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        // Limpiar formulario y refrescar la tabla automáticamente
+        const inputs = document.querySelectorAll('input[type="number"], input[type="text"]');
+        inputs.forEach(input => input.value = '');
+        await cargarJugadores();
+        
+    } catch(error) {
+        console.error("Error al modificar:", error);
+    }
+}
+
+
+
+
+
+
+// Cargar tabla de pitchers
+async function cargarPitchers() {
+    try {
+        const respuesta = await fetch('http://localhost:8080/api/pitchers');
+        let datos = await respuesta.json();
+        
+        // 1. Leer qué equipo seleccionó el usuario en el Filtro Global de arriba
+        const equipoSeleccionado = document.getElementById('filtro-equipo') ? document.getElementById('filtro-equipo').value : 'Todos';
+        
+        // 2. Aplicar el filtro a la lista de pitchers
+        if (equipoSeleccionado !== "Todos") {
+            datos = datos.filter(pitcher => pitcher.equipo === equipoSeleccionado);
+        }
+
+        // 3. Leer el menú de ordenamiento específico de los pitchers
+        const criterioOrdenP = document.getElementById('ordenar-por-p') ? document.getElementById('ordenar-por-p').value : 'defecto';
+        
+        // 4. Aplicar el ordenamiento inteligente
+        if (criterioOrdenP !== 'defecto') {
+            if (criterioOrdenP === 'era') {
+                datos.sort((a, b) => a[criterioOrdenP] - b[criterioOrdenP]); // Menor a mayor
+            } else {
+                datos.sort((a, b) => b[criterioOrdenP] - a[criterioOrdenP]); // Mayor a menor
+            }
+        }
+
+        // 5. Opcional: Limitar a 10 lanzadores si estamos viendo "Todos"
+        if (equipoSeleccionado === "Todos") {
+            datos = datos.slice(0, 10);
+        }
+        
+        const tabla = document.getElementById('tabla-pitchers');
+        tabla.innerHTML = '';
+        
+        datos.forEach(pitcher => {
+  const fila = `<tr>
+                <td>${pitcher.nombre}</td>
+                <td>${pitcher.equipo || '-'}</td>
+                <td>${pitcher.ip}</td>
+                <td>${pitcher.k}</td>
+                <td>${pitcher.cl}</td>
+                <td>${pitcher.cs}</td>
+                <td>${pitcher.g}</td>
+                <td>${pitcher.p}</td>
+                <td><strong>${Number(pitcher.era).toFixed(2)}</strong></td>
+                <td>
+                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer; margin-right: 5px;" onclick="modificarPitcher('${pitcher.nombre}', '${pitcher.equipo}')">Editar</button>
+                    <button style="background-color: #d32f2f; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;" onclick="eliminarPitcher('${pitcher.nombre}', '${pitcher.equipo}')">Borrar</button>
+                </td>
+            </tr>`;
+            tabla.innerHTML += fila;
+        });
+    } catch (error) {
+        console.error("Error cargando pitchers:", error);
+    }
+}
+
+// Registrar un pitcher nuevo o sumar estadísticas
+// Registrar un pitcher nuevo o sumar estadísticas
+async function agregarPitcher() {
+    const nombreInput = document.getElementById('nombre-p').value;
+    
+    if (!nombreInput) {
+        alert("Por favor, ingresa el nombre del pitcher.");
+        return; 
+    }
+
+    const payload = {
+        nombre: nombreInput,
+        equipo: document.getElementById('equipo-p').value,
+        ip: parseFloat(document.getElementById('ip').value) || 0.0,
+        k: parseInt(document.getElementById('k-p').value) || 0,
+        cl: parseInt(document.getElementById('cl').value) || 0,
+        cs: parseInt(document.getElementById('cs').value) || 0,
+        g: parseInt(document.getElementById('g').value) || 0,
+        p: parseInt(document.getElementById('p').value) || 0
+    };
+
+    try {
+        const respuesta = await fetch('http://localhost:8080/api/registrar_pitcher', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!respuesta.ok) {
+            throw new Error(`Error HTTP: ${respuesta.status}`);
+        }
+
+        // Limpiar el formulario
+        document.getElementById('nombre-p').value = '';
+        document.getElementById('ip').value = '';
+        document.getElementById('k-p').value = '';
+        document.getElementById('cl').value = '';
+        document.getElementById('cs').value = '';
+        document.getElementById('g').value = '';
+        document.getElementById('p').value = '';
+        
+        await cargarPitchers();
+    } catch(error) {
+        console.error("Error al registrar pitcher:", error);
+        alert("Asegúrate de que el servidor C++ esté encendido.");
+    }
+}
+async function eliminarPitcher(nombrePitcher, equipoPitcher) {
+    if (!confirm(`¿Estás seguro de eliminar a ${nombrePitcher} del equipo ${equipoPitcher}?`)) return;
+
+    try {
+        await fetch('http://localhost:8080/api/eliminar_pitcher', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre: nombrePitcher, equipo: equipoPitcher })
+        });
+        await cargarPitchers();
+    } catch(error) {
+        console.error("Error al eliminar pitcher:", error);
+    }
+}
+
+async function modificarPitcher(nombrePitcher, equipoPitcher) {
+    const payload = {
+        nombre: nombrePitcher,
+        equipo: equipoPitcher,
+        ip: parseFloat(document.getElementById('ip').value) || 0,
+        k: parseInt(document.getElementById('k-p').value) || 0,
+        cl: parseInt(document.getElementById('cl').value) || 0,
+        cs: parseInt(document.getElementById('cs').value) || 0,
+        g: parseInt(document.getElementById('g').value) || 0,
+        p: parseInt(document.getElementById('p').value) || 0
+    };
+
+    try {
+        await fetch('http://localhost:8080/api/modificar_pitcher', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        document.getElementById('nombre-p').value = '';
+        document.getElementById('ip').value = '';
+        document.getElementById('k-p').value = '';
+        document.getElementById('cl').value = '';
+        document.getElementById('cs').value = '';
+        document.getElementById('g').value = '';
+        document.getElementById('p').value = '';
+        
+        await cargarPitchers();
+    } catch(error) {
+        console.error("Error al modificar pitcher:", error);
+    }
+}
+async function cargarEquipos() {
+    try {
+        const respuesta = await fetch('http://localhost:8080/api/equipos');
+        let datos = await respuesta.json();
+        
+        // ORDENAR AUTOMÁTICAMENTE POR PUNTOS (MAYOR A MENOR)
+        datos.sort((a, b) => (b.pts || 0) - (a.pts || 0));
+        
+        const tabla = document.getElementById('tabla-equipos');
+        tabla.innerHTML = ''; 
+        
+        datos.forEach(eq => {
+            const fila = `<tr>
+                <td><strong>${eq.nombre}</strong></td>
+                <td>${eq.jg}</td>
+                <td>${eq.jp}</td>
+                <td>${eq.je || 0}</td>
+                <td>${eq.cf}</td>
+                <td>${eq.cc}</td>
+                <td><strong>${eq.pts || 0}</strong></td>
+                <td>
+                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;" onclick="modificarEquipo('${eq.nombre}')">Editar</button>
+                </td>
+            </tr>`;
+            tabla.innerHTML += fila;
+        });
+    } catch (error) {
+        console.error("Error cargando equipos:", error);
+    }
+}
+
+async function actualizarEquipo() {
+    const payload = {
+        nombre: document.getElementById('nombre-equipo').value,
+        jg: parseInt(document.getElementById('eq-jg').value) || 0,
+        jp: parseInt(document.getElementById('eq-jp').value) || 0,
+        je: parseInt(document.getElementById('eq-je').value) || 0,
+        cf: parseInt(document.getElementById('eq-cf').value) || 0,
+        cc: parseInt(document.getElementById('eq-cc').value) || 0
+    };
+
+    try {
+        await fetch('http://localhost:8080/api/actualizar_equipo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        // Limpiar formulario de equipos
+        document.getElementById('eq-jg').value = '';
+        document.getElementById('eq-jp').value = '';
+        document.getElementById('eq-je').value = '';
+        document.getElementById('eq-cf').value = '';
+        document.getElementById('eq-cc').value = '';
+        
+        await cargarEquipos();
+    } catch(error) {
+        console.error("Error al actualizar equipo:", error);
+    }
+}
+async function modificarEquipo(nombreEquipo) {
+    const payload = {
+        nombre: nombreEquipo,
+        jg: parseInt(document.getElementById('eq-jg').value) || 0,
+        jp: parseInt(document.getElementById('eq-jp').value) || 0,
+        je: parseInt(document.getElementById('eq-je').value) || 0,
+        cf: parseInt(document.getElementById('eq-cf').value) || 0,
+        cc: parseInt(document.getElementById('eq-cc').value) || 0
+    };
+
+    try {
+        await fetch('http://localhost:8080/api/modificar_equipo', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        document.getElementById('eq-jg').value = '';
+        document.getElementById('eq-jp').value = '';
+        document.getElementById('eq-je').value = '';
+        document.getElementById('eq-cf').value = '';
+        document.getElementById('eq-cc').value = '';
+        
+        await cargarEquipos();
+    } catch(error) {
+        console.error("Error al modificar equipo:", error);
+    }
+}
+// Equipo 4. Ejecutar al iniciar
+window.onload = () => {
+    cargarJugadores();
+    cargarPitchers();
+    cargarEquipos();
+};
+</script>
+
+</body> 
+</html>
