@@ -130,16 +130,31 @@ th.ordenable:hover { background-color: #322a9a; }
 <!-- SECCIÓN 1: Resumen (Tabla de posiciones) -->
 <div id="resumen" class="seccion-tab">
   <h2>Tabla de Posiciones</h2>
-  <!-- Aquí va el código de tu tabla de posiciones -->
+  <table>
+        <thead>
+            <tr>
+                <th>Equipo</th>
+                <th>JG</th>
+                <th>JP</th>
+                <th>JE</th> <!-- NUEVO -->
+                <th>CF</th>
+                <th>CC</th>
+                <th style="background-color: #322a9a;">PTS</th> <!-- NUEVO PUNTOS -->
+                <th>Acción</th>
+            </tr>
+            
+        </thead>
+        <tbody id="tabla-equipos">
+            <!-- Filas de equipos -->
+        </tbody>
+    </table>
 </div>
 
 <!-- SECCIÓN 2: Equipos (Bateadores y Pitchers) -->
 <div id="equipos" class="seccion-tab oculto">
   <h2>Estadísticas de Jugadores</h2>
   <!-- Aquí van tus tablas y formularios de Bateadores y Pitchers -->
-</div>
-
-<div class="contenedor">
+    <div class="contenedor">
     <h2>Equipo 1. Armar Equipo y Registrar Jugador</h2>
     
     <!-- Formulario de entrada -->
@@ -165,6 +180,47 @@ th.ordenable:hover { background-color: #322a9a; }
         <input type="number" id="ca" placeholder="CA" min="0">
         <input type="number" id="k" placeholder="K" min="0">
         <button onclick="agregarJugador()">Añadir al Roster</button>
+        <table>
+        <thead>
+            <tr>
+                <th>Pitcher</th>
+                <th>Equipo</th>
+                <th>IP</th>
+                <th>K</th>
+                <th>CL</th>
+                <th>CS</th>
+                <th>G</th>
+                <th>P</th>
+                <th>ERA (Efectividad)</th>
+                <th>Acciones</th> <!-- Nueva columna -->
+            </tr>
+            </tr>
+        </thead>
+        <tbody id="tabla-pitchers">
+            <!-- Filas dinámicas de pitchers -->
+        </tbody>
+    </table>
+
+<h2 style="margin-top: 40px;">4. Tabla de Posiciones (Equipos)</h2>
+    
+    <div class="formulario">
+        <select id="nombre-equipo">
+            <option value="Equipo 1">Equipo 1</option>
+            <option value="Equipo 2">Equipo 2</option>
+            <option value="Equipo 3">Equipo 3</option>
+            <option value="Equipo 4">Equipo 4</option>
+            <option value="Equipo 5">Equipo 5</option>
+            <option value="Equipo 6">Equipo 6</option>
+            <option value="Equipo 7">Equipo 7</option>
+            <option value="Equipo 8">Equipo 8</option>
+        </select>
+        <input type="number" id="eq-jg" placeholder="Ganados (JG)" min="0">
+        <input type="number" id="eq-jp" placeholder="Perdidos (JP)" min="0">
+        <input type="number" id="eq-je" placeholder="Empates (JE)" min="0"> <!-- NUEVO -->
+        <input type="number" id="eq-cf" placeholder="A Favor (CF)" min="0">
+        <input type="number" id="eq-cc" placeholder="En Contra (CC)" min="0">
+        <button onclick="actualizarEquipo()">Sumar al Récord</button>
+    </div>
     </div>
 
     <h2>Equipo 2. Roster y Estadísticas Actualizadas</h2>
@@ -227,6 +283,9 @@ th.ordenable:hover { background-color: #322a9a; }
         </tbody>
     </table>
 </div>
+</div>
+
+
 <h2 style="margin-top: 40px;">3. Registro y Estadísticas de Lanzadores (Pitchers)</h2>
     <!-- Menú para ordenar Pitchers -->
     <div style="margin-bottom: 15px; background: #e9ecef; padding: 10px; border-radius: 5px;">
@@ -266,66 +325,9 @@ th.ordenable:hover { background-color: #322a9a; }
     </div>
 
     <!-- Tabla de Pitchers -->
-    <table>
-        <thead>
-            <tr>
-                <th>Pitcher</th>
-                <th>Equipo</th>
-                <th>IP</th>
-                <th>K</th>
-                <th>CL</th>
-                <th>CS</th>
-                <th>G</th>
-                <th>P</th>
-                <th>ERA (Efectividad)</th>
-                <th>Acciones</th> <!-- Nueva columna -->
-            </tr>
-            </tr>
-        </thead>
-        <tbody id="tabla-pitchers">
-            <!-- Filas dinámicas de pitchers -->
-        </tbody>
-    </table>
 
-<h2 style="margin-top: 40px;">4. Tabla de Posiciones (Equipos)</h2>
+
     
-    <div class="formulario">
-        <select id="nombre-equipo">
-            <option value="Equipo 1">Equipo 1</option>
-            <option value="Equipo 2">Equipo 2</option>
-            <option value="Equipo 3">Equipo 3</option>
-            <option value="Equipo 4">Equipo 4</option>
-            <option value="Equipo 5">Equipo 5</option>
-            <option value="Equipo 6">Equipo 6</option>
-            <option value="Equipo 7">Equipo 7</option>
-            <option value="Equipo 8">Equipo 8</option>
-        </select>
-        <input type="number" id="eq-jg" placeholder="Ganados (JG)" min="0">
-        <input type="number" id="eq-jp" placeholder="Perdidos (JP)" min="0">
-        <input type="number" id="eq-je" placeholder="Empates (JE)" min="0"> <!-- NUEVO -->
-        <input type="number" id="eq-cf" placeholder="A Favor (CF)" min="0">
-        <input type="number" id="eq-cc" placeholder="En Contra (CC)" min="0">
-        <button onclick="actualizarEquipo()">Sumar al Récord</button>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Equipo</th>
-                <th>JG</th>
-                <th>JP</th>
-                <th>JE</th> <!-- NUEVO -->
-                <th>CF</th>
-                <th>CC</th>
-                <th style="background-color: #322a9a;">PTS</th> <!-- NUEVO PUNTOS -->
-                <th>Acción</th>
-            </tr>
-            
-        </thead>
-        <tbody id="tabla-equipos">
-            <!-- Filas de equipos -->
-        </tbody>
-    </table>
 <script>
     function cambiarPestana(evento, idSeccion) {
   // 1. Ocultar todas las secciones
