@@ -219,7 +219,7 @@ th.ordenable:hover { background-color: #322a9a; }
 // Equipo 1. Función para cargar y dibujar la tabla con filtro
 async function cargarJugadores() {
     try {
-        const respuesta = await fetch('http://localhost:8080/api/jugadores');
+        const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/jugadores');
         let datos = await respuesta.json();
         
         const equipoSeleccionado = document.getElementById('filtro-equipo').value;
@@ -294,7 +294,7 @@ async function agregarJugador() {
     }
 
     try {
-        await fetch('http://localhost:8080/api/registrar', {
+        await fetch('https://liga-esguarnac.onrender.com/api/registrar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -313,7 +313,7 @@ async function eliminarJugador(nombreJugador, equipoJugador) {
     if (!confirm(`¿Estás seguro de eliminar a ${nombreJugador} del equipo ${equipoJugador}?`)) return;
 
     try {
-        await fetch('http://localhost:8080/api/eliminar', {
+        await fetch('https://liga-esguarnac.onrender.com/api/eliminar', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre: nombreJugador, equipo: equipoJugador })
@@ -340,7 +340,7 @@ async function modificarJugador(nombreJugador, equipoJugador) {
     };
 
     try {
-        await fetch('http://localhost:8080/api/modificar', {
+        await fetch('https://liga-esguarnac.onrender.com/api/modificar', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -364,7 +364,7 @@ async function modificarJugador(nombreJugador, equipoJugador) {
 // Cargar tabla de pitchers
 async function cargarPitchers() {
     try {
-        const respuesta = await fetch('http://localhost:8080/api/pitchers');
+        const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/pitchers');
         let datos = await respuesta.json();
         
         // 1. Leer qué equipo seleccionó el usuario en el Filtro Global de arriba
@@ -440,7 +440,7 @@ async function agregarPitcher() {
     };
 
     try {
-        const respuesta = await fetch('http://localhost:8080/api/registrar_pitcher', {
+        const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/registrar_pitcher', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -469,7 +469,7 @@ async function eliminarPitcher(nombrePitcher, equipoPitcher) {
     if (!confirm(`¿Estás seguro de eliminar a ${nombrePitcher} del equipo ${equipoPitcher}?`)) return;
 
     try {
-        await fetch('http://localhost:8080/api/eliminar_pitcher', {
+        await fetch('https://liga-esguarnac.onrender.com/api/eliminar_pitcher', {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre: nombrePitcher, equipo: equipoPitcher })
@@ -493,7 +493,7 @@ async function modificarPitcher(nombrePitcher, equipoPitcher) {
     };
 
     try {
-        await fetch('http://localhost:8080/api/modificar_pitcher', {
+        await fetch('https://liga-esguarnac.onrender.com/api/modificar_pitcher', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -514,7 +514,7 @@ async function modificarPitcher(nombrePitcher, equipoPitcher) {
 }
 async function cargarEquipos() {
     try {
-        const respuesta = await fetch('http://localhost:8080/api/equipos');
+        const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/equipos');
         let datos = await respuesta.json();
         
         // ORDENAR AUTOMÁTICAMENTE POR PUNTOS (MAYOR A MENOR)
@@ -554,7 +554,7 @@ async function actualizarEquipo() {
     };
 
     try {
-        await fetch('http://localhost:8080/api/actualizar_equipo', {
+        await fetch('https://liga-esguarnac.onrender.com/api/actualizar_equipo', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -583,7 +583,7 @@ async function modificarEquipo(nombreEquipo) {
     };
 
     try {
-        await fetch('http://localhost:8080/api/modificar_equipo', {
+        await fetch('https://liga-esguarnac.onrender.com/api/modificar_equipo', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
