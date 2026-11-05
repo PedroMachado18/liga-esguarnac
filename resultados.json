@@ -1,16 +1,3 @@
 [
-    {
-        "carrerasLocal": 2,
-        "carrerasVisitante": 2,
-        "fecha": "2026-11-01",
-        "local": "Equipo 2",
-        "visitante": "Equipo 2"
-    },
-    {
-        "carrerasLocal": 1,
-        "carrerasVisitante": 2,
-        "fecha": "2026-11-01",
-        "local": "Equipo 8",
-        "visitante": "Equipo 2"
-    }
+
 ]
