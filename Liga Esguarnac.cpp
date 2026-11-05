@@ -392,10 +392,99 @@ svr.Post("/api/registrar_pitcher", [](const httplib::Request& req, httplib::Resp
         res.set_content("{\"status\":\"ok\"}", "application/json");
     });
     // Endpoint GET: Enviar tabla de equipos
-    svr.Get("/api/equipos", [](const httplib::Request& req, httplib::Response& res) {
-        res.set_header("Access-Control-Allow-Origin", "*");
-        res.set_content(baseDeDatosEquipos.dump(), "application/json");
-    });
+// ==========================================
+// RUTAS PARA EQUIPOS
+// ==========================================
+
+// 1. GET Equipos
+svr.Get("/equipos", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+    cli.enable_server_certificate_verification(false);
+    
+    if (auto fire_res = cli.Get("/equipos.json")) {
+        if (fire_res->status == 200) {
+            std::string data = fire_res->body == "null" ? "[]" : fire_res->body;
+            res.set_content(data, "application/json");
+        } else {
+            res.status = 500;
+            res.set_content("Error al leer base de datos en Firebase", "text/plain");
+        }
+    } else {
+        res.status = 500;
+        res.set_content("Fallo de conexion a Firebase", "text/plain");
+    }
+});
+
+// 2. POST Equipos
+svr.Post("/equipos", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+    cli.enable_server_certificate_verification(false);
+    
+    auto fire_get = cli.Get("/equipos.json");
+    
+    nlohmann::json lista;
+    if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
+        lista = nlohmann::json::parse(fire_get->body);
+    } else {
+        lista = nlohmann::json::array();
+    }
+
+    nlohmann::json nuevo = nlohmann::json::parse(req.body);
+    lista.push_back(nuevo);
+
+    auto fire_put = cli.Put("/equipos.json", lista.dump(), "application/json");
+
+    if (fire_put && fire_put->status == 200) {
+        res.status = 200;
+        res.set_content("Guardado exitosamente", "text/plain");
+    } else {
+        res.status = 500;
+        res.set_content("Error al guardar", "text/plain");
+    }
+});
+
+// 3. DELETE Equipos
+svr.Delete("/equipos", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    
+    if (req.has_param("id")) {
+        int index = std::stoi(req.get_param_value("id"));
+        httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+        cli.enable_server_certificate_verification(false);
+        
+        auto fire_get = cli.Get("/equipos.json");
+        
+        if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
+            nlohmann::json lista = nlohmann::json::parse(fire_get->body);
+            
+            if (index >= 0 && index < lista.size()) {
+                lista.erase(index);
+                auto fire_put = cli.Put("/equipos.json", lista.dump(), "application/json");
+                
+                if (fire_put && fire_put->status == 200) {
+                    res.status = 200;
+                    res.set_content("Eliminado exitosamente", "text/plain");
+                    return;
+                }
+            }
+        }
+        res.status = 500;
+        res.set_content("Error al borrar", "text/plain");
+    } else {
+        res.status = 400;
+        res.set_content("Falta el ID", "text/plain");
+    }
+});
+
+// 4. OPTIONS Equipos (CORS)
+svr.Options("/equipos", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    res.set_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+    res.set_header("Access-Control-Allow-Headers", "Content-Type");
+    res.status = 200;
+});
 
     // Endpoint POST: Registrar o actualizar récord del equipo
 // Endpoint POST: Registrar o actualizar récord del equipo (con Puntos)
