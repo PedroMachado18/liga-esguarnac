@@ -397,7 +397,7 @@ svr.Post("/api/registrar_pitcher", [](const httplib::Request& req, httplib::Resp
 // ==========================================
 
 // 1. GET Equipos
-svr.Get("/equipos", [](const httplib::Request& req, httplib::Response& res) {
+svr.Get("/api/equipos", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
     cli.enable_server_certificate_verification(false);
@@ -417,7 +417,7 @@ svr.Get("/equipos", [](const httplib::Request& req, httplib::Response& res) {
 });
 
 // 2. POST Equipos
-svr.Post("/equipos", [](const httplib::Request& req, httplib::Response& res) {
+svr.Post("/api/equipos", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
     cli.enable_server_certificate_verification(false);
@@ -446,7 +446,7 @@ svr.Post("/equipos", [](const httplib::Request& req, httplib::Response& res) {
 });
 
 // 3. DELETE Equipos
-svr.Delete("/equipos", [](const httplib::Request& req, httplib::Response& res) {
+svr.Delete("/api/equipos", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     
     if (req.has_param("id")) {
@@ -479,9 +479,15 @@ svr.Delete("/equipos", [](const httplib::Request& req, httplib::Response& res) {
 });
 
 // 4. OPTIONS Equipos (CORS)
-svr.Options("/equipos", [](const httplib::Request& req, httplib::Response& res) {
+svr.Options("/api/equipos", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     res.set_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+    res.set_header("Access-Control-Allow-Headers", "Content-Type");
+    res.status = 200;
+});
+svr.Options("/api/actualizar_equipo", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    res.set_header("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.set_header("Access-Control-Allow-Headers", "Content-Type");
     res.status = 200;
 });
