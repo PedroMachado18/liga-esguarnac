@@ -522,3 +522,4 @@ svr.Delete("/resultados", [](const httplib::Request& req, httplib::Response& res
     
     // 2. Usar 0.0.0.0 es OBLIGATORIO para recibir conexiones desde el exterior en Render
     svr.listen("0.0.0.0", port);
+}
