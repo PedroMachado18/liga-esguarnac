@@ -1,3 +1,4 @@
+#define CPPHTTPLIB_OPENSSL_SUPPORT
 #include <iostream>
 #include <vector>
 
@@ -434,93 +435,99 @@ svr.Post("/api/registrar_pitcher", [](const httplib::Request& req, httplib::Resp
         guardarDatos();
         res.set_content("{\"status\":\"ok\"}", "application/json");
     });
-    svr.Get("/resultados", [](const httplib::Request& req, httplib::Response& res) {
-        res.set_header("Access-Control-Allow-Origin", "*");
-        std::ifstream archivo("resultados.json");
-        if (archivo.is_open()) {
-            std::stringstream buffer;
-            buffer << archivo.rdbuf();
-            res.set_content(buffer.str(), "application/json");
+svr.Get("/resultados", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    
+    // Conectar a Firebase (Coloca tu URL sin el / final)
+    httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+    
+    // Solicitar el archivo .json
+    if (auto fire_res = cli.Get("/resultados.json")) {
+        if (fire_res->status == 200) {
+            // Si Firebase está vacío devuelve "null". Lo convertimos a un arreglo vacío [].
+            std::string data = fire_res->body == "null" ? "[]" : fire_res->body;
+            res.set_content(data, "application/json");
         } else {
-            res.set_content("[]", "application/json");
-        }
-    });
-
-    // 2. Ruta para recibir y guardar un nuevo resultado (POST)
-    svr.Post("/resultados", [](const httplib::Request& req, httplib::Response& res) {
-        res.set_header("Access-Control-Allow-Origin", "*");
-        try {
-            json nuevo_juego = json::parse(req.body);
-            json resultados = json::array();
-
-            std::ifstream archivo_entrada("resultados.json");
-            if (archivo_entrada.is_open()) {
-                archivo_entrada >> resultados;
-                archivo_entrada.close();
-            }
-
-            resultados.push_back(nuevo_juego);
-
-            std::ofstream archivo_salida("resultados.json");
-            archivo_salida << resultados.dump(4);
-            archivo_salida.close();
-
-            res.set_content("{\"status\":\"success\"}", "application/json");
-        } catch (const std::exception& e) {
             res.status = 500;
-            res.set_content("{\"error\":\"Error interno del servidor\"}", "application/json");
+            res.set_content("Error al leer base de datos en Firebase", "text/plain");
         }
-    });
+    } else {
+        res.status = 500;
+        res.set_content("Fallo de conexion a Firebase", "text/plain");
+    }
+});
+
+svr.Post("/resultados", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    
+    httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+    auto fire_get = cli.Get("/resultados.json");
+    
+    nlohmann::json resultados;
+    if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
+        resultados = nlohmann::json::parse(fire_get->body);
+    } else {
+        resultados = nlohmann::json::array();
+    }
+
+    // Agregar el nuevo resultado que envió el Frontend
+    nlohmann::json nuevo = nlohmann::json::parse(req.body);
+    resultados.push_back(nuevo);
+
+    // Sobrescribir todo en Firebase usando el método PUT
+    auto fire_put = cli.Put("/resultados.json", resultados.dump(), "application/json");
+
+    if (fire_put && fire_put->status == 200) {
+        res.status = 200;
+        res.set_content("Guardado exitosamente en Firebase", "text/plain");
+    } else {
+        res.status = 500;
+        res.set_content("Error al guardar en Firebase", "text/plain");
+    }
+});
 
     // 3. Ruta OPTIONS (CORS) obligatoria para evitar bloqueos del navegador
 svr.Delete("/resultados", [](const httplib::Request& req, httplib::Response& res) {
-    // 1. Dar permiso CORS
     res.set_header("Access-Control-Allow-Origin", "*");
-
-    // 2. Verificar si JavaScript envió el parámetro ?id=...
+    
     if (req.has_param("id")) {
         int index = std::stoi(req.get_param_value("id"));
-
-        // 3. Abrir la base de datos
-        std::ifstream file("resultados.json");
-        nlohmann::json resultados;
-        if (file.is_open()) {
-            file >> resultados;
-            file.close();
-        } else {
-            res.status = 500;
-            res.set_content("Error al abrir base de datos", "text/plain");
-            return;
+        
+        httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+        auto fire_get = cli.Get("/resultados.json");
+        
+        if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
+            nlohmann::json resultados = nlohmann::json::parse(fire_get->body);
+            
+            if (index >= 0 && index < resultados.size()) {
+                resultados.erase(index);
+                
+                auto fire_put = cli.Put("/resultados.json", resultados.dump(), "application/json");
+                
+                if (fire_put && fire_put->status == 200) {
+                    res.status = 200;
+                    res.set_content("Eliminado de Firebase", "text/plain");
+                    return;
+                }
+            }
         }
-
-        // 4. Borrar la posición exacta
-        if (index >= 0 && index < resultados.size()) {
-            resultados.erase(index);
-
-            // 5. Guardar los cambios
-            std::ofstream outFile("resultados.json");
-            outFile << resultados.dump(4);
-            outFile.close();
-
-            res.status = 200;
-            res.set_content("Eliminado", "text/plain");
-        } else {
-            res.status = 404;
-            res.set_content("No encontrado", "text/plain");
-        }
+        res.status = 500;
+        res.set_content("Error al borrar en Firebase", "text/plain");
     } else {
         res.status = 400;
         res.set_content("Falta enviar el ID", "text/plain");
     }
 });
 
-    int port = 8080;
-    if (const char* env_p = std::getenv("PORT")) {
-        port = std::stoi(env_p);
-    }
-
-    std::cout << "Servidor API de Beisbol corriendo en el puerto " << port << "..." << std::endl;
-    
-    // 2. Usar 0.0.0.0 es OBLIGATORIO para recibir conexiones desde el exterior en Render
-    svr.listen("0.0.0.0", port);
+// --- FINAL DEL PROGRAMA ---
+int port = 8080;
+if (const char* env_p = std::getenv("PORT")) {
+    port = std::stoi(env_p);
 }
+
+std::cout << "Servidor API de Beisbol corriendo en el puerto " << port << "..." << std::endl;
+
+svr.listen("0.0.0.0", port);
+
+return 0;
+} // <-- Esta llave cierra la funcion int main()
