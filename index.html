@@ -756,7 +756,7 @@ async function modificarEquipo(nombreEquipo) {
         cf: parseInt(document.getElementById('eq-cf').value) || 0,
         cc: parseInt(document.getElementById('eq-cc').value) || 0
     };
-
+console.log("Enviando a C++:", payload); // <--- AGREGAR ESTA LÍNEA
     try {
         // 1. CAMBIO AQUÍ: Cambiamos a 'POST' y a '/api/actualizar_equipo'
         const response = await fetch('https://liga-esguarnac.onrender.com/api/actualizar_equipo', {
