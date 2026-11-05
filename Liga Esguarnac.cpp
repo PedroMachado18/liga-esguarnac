@@ -485,12 +485,7 @@ svr.Options("/api/equipos", [](const httplib::Request& req, httplib::Response& r
     res.set_header("Access-Control-Allow-Headers", "Content-Type");
     res.status = 200;
 });
-svr.Options("/api/actualizar_equipo", [](const httplib::Request& req, httplib::Response& res) {
-    res.set_header("Access-Control-Allow-Origin", "*");
-    res.set_header("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.set_header("Access-Control-Allow-Headers", "Content-Type");
-    res.status = 200;
-});
+
 
     // Endpoint POST: Registrar o actualizar récord del equipo
 // Endpoint POST: Registrar o actualizar récord del equipo (con Puntos)
