@@ -10,7 +10,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
     
 # Copiar el código al contenedor
-COPY "Liga Esguarnac.cpp" .
+COPY ["Liga Esguarnac.cpp", "."]
 COPY httplib.h .
 COPY json.hpp .
 
@@ -21,5 +21,4 @@ RUN g++ "Liga Esguarnac.cpp" -o servidor -std=c++17 -pthread -lssl -lcrypto
 EXPOSE $PORT
 CMD ["./servidor"]
 
-# Encendemos el servidor
-CMD ["./servidor"]
+# Encendemos el servido
