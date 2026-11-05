@@ -513,6 +513,12 @@ svr.Delete("/resultados", [](const httplib::Request& req, httplib::Response& res
     }
 });
 
-    svr.listen("0.0.0.0", 8080);
-    return 0;
-}
+    int port = 8080;
+    if (const char* env_p = std::getenv("PORT")) {
+        port = std::stoi(env_p);
+    }
+
+    std::cout << "Servidor API de Beisbol corriendo en el puerto " << port << "..." << std::endl;
+    
+    // 2. Usar 0.0.0.0 es OBLIGATORIO para recibir conexiones desde el exterior en Render
+    svr.listen("0.0.0.0", port);
