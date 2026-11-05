@@ -435,16 +435,15 @@ svr.Post("/api/registrar_pitcher", [](const httplib::Request& req, httplib::Resp
         guardarDatos();
         res.set_content("{\"status\":\"ok\"}", "application/json");
     });
+// 1. Ruta GET (Leer)
 svr.Get("/resultados", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     
-    // Conectar a Firebase (Coloca tu URL sin el / final)
     httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+    cli.enable_server_certificate_verification(false); // <--- SOLUCION DE CONEXION
     
-    // Solicitar el archivo .json
     if (auto fire_res = cli.Get("/resultados.json")) {
         if (fire_res->status == 200) {
-            // Si Firebase está vacío devuelve "null". Lo convertimos a un arreglo vacío [].
             std::string data = fire_res->body == "null" ? "[]" : fire_res->body;
             res.set_content(data, "application/json");
         } else {
@@ -457,10 +456,13 @@ svr.Get("/resultados", [](const httplib::Request& req, httplib::Response& res) {
     }
 });
 
+// 2. Ruta POST (Guardar)
 svr.Post("/resultados", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     
     httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+    cli.enable_server_certificate_verification(false); // <--- SOLUCION DE CONEXION
+    
     auto fire_get = cli.Get("/resultados.json");
     
     nlohmann::json resultados;
@@ -470,11 +472,9 @@ svr.Post("/resultados", [](const httplib::Request& req, httplib::Response& res) 
         resultados = nlohmann::json::array();
     }
 
-    // Agregar el nuevo resultado que envió el Frontend
     nlohmann::json nuevo = nlohmann::json::parse(req.body);
     resultados.push_back(nuevo);
 
-    // Sobrescribir todo en Firebase usando el método PUT
     auto fire_put = cli.Put("/resultados.json", resultados.dump(), "application/json");
 
     if (fire_put && fire_put->status == 200) {
@@ -486,7 +486,7 @@ svr.Post("/resultados", [](const httplib::Request& req, httplib::Response& res) 
     }
 });
 
-    // 3. Ruta OPTIONS (CORS) obligatoria para evitar bloqueos del navegador
+// 3. Ruta DELETE (Eliminar)
 svr.Delete("/resultados", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     
@@ -494,6 +494,8 @@ svr.Delete("/resultados", [](const httplib::Request& req, httplib::Response& res
         int index = std::stoi(req.get_param_value("id"));
         
         httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+        cli.enable_server_certificate_verification(false); // <--- SOLUCION DE CONEXION
+        
         auto fire_get = cli.Get("/resultados.json");
         
         if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
@@ -501,7 +503,6 @@ svr.Delete("/resultados", [](const httplib::Request& req, httplib::Response& res
             
             if (index >= 0 && index < resultados.size()) {
                 resultados.erase(index);
-                
                 auto fire_put = cli.Put("/resultados.json", resultados.dump(), "application/json");
                 
                 if (fire_put && fire_put->status == 200) {
@@ -517,6 +518,14 @@ svr.Delete("/resultados", [](const httplib::Request& req, httplib::Response& res
         res.status = 400;
         res.set_content("Falta enviar el ID", "text/plain");
     }
+});
+
+// 4. Ruta OPTIONS obligatoria para navegadores
+svr.Options("/resultados", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    res.set_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+    res.set_header("Access-Control-Allow-Headers", "Content-Type");
+    res.status = 200;
 });
 
 // --- FINAL DEL PROGRAMA ---
