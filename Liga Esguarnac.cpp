@@ -490,41 +490,74 @@ svr.Options("/api/equipos", [](const httplib::Request& req, httplib::Response& r
     // Endpoint POST: Registrar o actualizar récord del equipo
 // Endpoint POST: Registrar o actualizar récord del equipo (con Puntos)
     svr.Post("/api/actualizar_equipo", [](const httplib::Request& req, httplib::Response& res) {
-        res.set_header("Access-Control-Allow-Origin", "*");
-        auto datos = json::parse(req.body);
-        std::string nombreBuscado = datos["nombre"].get<std::string>();
-
-        bool existe = false;
-
-        for (auto& eq : baseDeDatosEquipos) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    
+    httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+    cli.enable_server_certificate_verification(false);
+    
+    nlohmann::json datosRecibidos = nlohmann::json::parse(req.body);
+    std::string nombreBuscado = datosRecibidos["nombre"].get<std::string>();
+    
+    // 1. Descargar la tabla de Firebase
+    auto fire_get = cli.Get("/equipos.json");
+    
+    if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
+        nlohmann::json listaEquipos = nlohmann::json::parse(fire_get->body);
+        bool encontrado = false;
+        
+        // 2. Buscar el equipo y sumar los nuevos datos a los que ya existen
+        for (auto& eq : listaEquipos) {
             if (eq["nombre"] == nombreBuscado) {
-                eq["jg"] = eq["jg"].get<int>() + datos["jg"].get<int>();
-                eq["jp"] = eq["jp"].get<int>() + datos["jp"].get<int>();
+                eq["jg"] = eq.value("jg", 0) + datosRecibidos.value("jg", 0);
+                eq["jp"] = eq.value("jp", 0) + datosRecibidos.value("jp", 0);
+                eq["je"] = eq.value("je", 0) + datosRecibidos.value("je", 0);
+                eq["cf"] = eq.value("cf", 0) + datosRecibidos.value("cf", 0);
+                eq["cc"] = eq.value("cc", 0) + datosRecibidos.value("cc", 0);
                 
-                // Leemos los empates de forma segura por si el archivo viejo no lo tenía
-                int empatesActuales = eq.contains("je") ? eq["je"].get<int>() : 0;
-                eq["je"] = empatesActuales + datos["je"].get<int>();
-                
-                eq["cf"] = eq["cf"].get<int>() + datos["cf"].get<int>();
-                eq["cc"] = eq["cc"].get<int>() + datos["cc"].get<int>();
-                
-                // Calcular puntos: 3 por Ganado, 1 por Empatado, 0 por Perdido
                 eq["pts"] = (eq["jg"].get<int>() * 3) + (eq["je"].get<int>() * 1);
                 
-                existe = true;
+                encontrado = true;
                 break;
             }
         }
-
-        if (!existe) {
-            // Si el equipo es nuevo, scalculamos sus puntos iniciales
-            datos["pts"] = (datos["jg"].get<int>() * 3) + (datos["je"].get<int>() * 1);
-            baseDeDatosEquipos.push_back(datos);
+        
+        if (encontrado) {
+            // 3. Subir los datos ya sumados a Firebase
+            auto fire_put = cli.Put("/equipos.json", listaEquipos.dump(), "application/json");
+            if (fire_put && fire_put->status == 200) {
+                res.status = 200;
+                res.set_content("Actualizado correctamente", "text/plain");
+                return;
+            }
+        } else {
+            // Si el equipo no existe en Firebase, lo agregamos como nuevo
+            datosRecibidos["pts"] = (datosRecibidos.value("jg", 0) * 3) + (datosRecibidos.value("je", 0) * 1);
+            listaEquipos.push_back(datosRecibidos);
+            
+            auto fire_put = cli.Put("/equipos.json", listaEquipos.dump(), "application/json");
+            if (fire_put && fire_put->status == 200) {
+                res.status = 200;
+                res.set_content("Equipo nuevo creado", "text/plain");
+                return;
+            }
         }
-
-        guardarDatos();
-        res.set_content("{\"status\":\"ok\"}", "application/json");
-    });
+    } else {
+        // Si la base de datos está totalmente vacía, creamos el primer equipo
+        nlohmann::json listaEquipos = nlohmann::json::array();
+        datosRecibidos["pts"] = (datosRecibidos.value("jg", 0) * 3) + (datosRecibidos.value("je", 0) * 1);
+        listaEquipos.push_back(datosRecibidos);
+        
+        auto fire_put = cli.Put("/equipos.json", listaEquipos.dump(), "application/json");
+        if (fire_put && fire_put->status == 200) {
+            res.status = 200;
+            res.set_content("Primer equipo creado", "text/plain");
+            return;
+        }
+    }
+    
+    res.status = 500;
+    res.set_content("Error al guardar en Firebase", "text/plain");
+});
 // 1. Ruta GET (Leer)
 svr.Get("/resultados", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
