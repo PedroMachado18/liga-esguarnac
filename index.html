@@ -759,7 +759,7 @@ async function modificarEquipo(nombreEquipo) {
 
     try {
         await fetch('https://liga-esguarnac.onrender.com/api/modificar_equipo', {
-            method: 'PUT',
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
