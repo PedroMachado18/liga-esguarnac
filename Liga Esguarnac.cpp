@@ -7,6 +7,7 @@
 #include <string>
 #include "httplib.h"
 #include "json.hpp"
+#include <cstdlib>
 
 class Jugador {
 private:
