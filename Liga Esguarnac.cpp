@@ -425,7 +425,7 @@ svr.Post("/api/registrar_pitcher", [](const httplib::Request& req, httplib::Resp
         }
 
         if (!existe) {
-            // Si el equipo es nuevo, calculamos sus puntos iniciales
+            // Si el equipo es nuevo, scalculamos sus puntos iniciales
             datos["pts"] = (datos["jg"].get<int>() * 3) + (datos["je"].get<int>() * 1);
             baseDeDatosEquipos.push_back(datos);
         }
@@ -433,6 +433,86 @@ svr.Post("/api/registrar_pitcher", [](const httplib::Request& req, httplib::Resp
         guardarDatos();
         res.set_content("{\"status\":\"ok\"}", "application/json");
     });
+    svr.Get("/resultados", [](const httplib::Request& req, httplib::Response& res) {
+        res.set_header("Access-Control-Allow-Origin", "*");
+        std::ifstream archivo("resultados.json");
+        if (archivo.is_open()) {
+            std::stringstream buffer;
+            buffer << archivo.rdbuf();
+            res.set_content(buffer.str(), "application/json");
+        } else {
+            res.set_content("[]", "application/json");
+        }
+    });
+
+    // 2. Ruta para recibir y guardar un nuevo resultado (POST)
+    svr.Post("/resultados", [](const httplib::Request& req, httplib::Response& res) {
+        res.set_header("Access-Control-Allow-Origin", "*");
+        try {
+            json nuevo_juego = json::parse(req.body);
+            json resultados = json::array();
+
+            std::ifstream archivo_entrada("resultados.json");
+            if (archivo_entrada.is_open()) {
+                archivo_entrada >> resultados;
+                archivo_entrada.close();
+            }
+
+            resultados.push_back(nuevo_juego);
+
+            std::ofstream archivo_salida("resultados.json");
+            archivo_salida << resultados.dump(4);
+            archivo_salida.close();
+
+            res.set_content("{\"status\":\"success\"}", "application/json");
+        } catch (const std::exception& e) {
+            res.status = 500;
+            res.set_content("{\"error\":\"Error interno del servidor\"}", "application/json");
+        }
+    });
+
+    // 3. Ruta OPTIONS (CORS) obligatoria para evitar bloqueos del navegador
+svr.Delete("/resultados", [](const httplib::Request& req, httplib::Response& res) {
+    // 1. Dar permiso CORS
+    res.set_header("Access-Control-Allow-Origin", "*");
+
+    // 2. Verificar si JavaScript envió el parámetro ?id=...
+    if (req.has_param("id")) {
+        int index = std::stoi(req.get_param_value("id"));
+
+        // 3. Abrir la base de datos
+        std::ifstream file("resultados.json");
+        nlohmann::json resultados;
+        if (file.is_open()) {
+            file >> resultados;
+            file.close();
+        } else {
+            res.status = 500;
+            res.set_content("Error al abrir base de datos", "text/plain");
+            return;
+        }
+
+        // 4. Borrar la posición exacta
+        if (index >= 0 && index < resultados.size()) {
+            resultados.erase(index);
+
+            // 5. Guardar los cambios
+            std::ofstream outFile("resultados.json");
+            outFile << resultados.dump(4);
+            outFile.close();
+
+            res.status = 200;
+            res.set_content("Eliminado", "text/plain");
+        } else {
+            res.status = 404;
+            res.set_content("No encontrado", "text/plain");
+        }
+    } else {
+        res.status = 400;
+        res.set_content("Falta enviar el ID", "text/plain");
+    }
+});
+
     svr.listen("0.0.0.0", 8080);
     return 0;
 }
