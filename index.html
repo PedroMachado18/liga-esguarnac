@@ -298,27 +298,42 @@ th.ordenable:hover { background-color: #322a9a; }
             <button onclick="agregarPitcher()">Añadir Lanzador</button>
         </div>
 
-        <!-- TABLA DE PITCHERS -->
+
+
+    <!-- FILTRO DE ORDENAMIENTO PARA PITCHERS -->
+        <div style="margin-bottom: 15px; background: #e9ecef; padding: 10px; border-radius: 5px;">
+            <label for="ordenar-pitchers" style="font-weight: bold; color: #1e5631;">Ordenar Pitchers por:</label>
+            <select id="ordenar-pitchers" onchange="cargarPitchers()" style="margin-left: 10px; padding: 5px;">
+                <option value="defecto">Orden de registro</option>
+                <option value="era">ERA - Efectividad (Menor a Mayor)</option>
+                <option value="ip">Innings Lanzados - IP (Mayor a Menor)</option>
+                <option value="k">Ponches - K (Mayor a Menor)</option>
+                <option value="g">Juegos Ganados - G (Mayor a Menor)</option>
+                <option value="p">Juegos Perdidos - P (Mayor a Menor)</option>
+                <option value="cl">Carreras Limpias - CL (Mayor a Menor)</option>
+                <option value="cs">Carreras Sucias - CS (Mayor a Menor)</option>
+            </select>
+        </div>
+
+        <!-- TABLA DE PITCHERS CON CABECERAS INTERACTIVAS -->
         <table>
             <thead>
                 <tr>
                     <th>Pitcher</th>
                     <th>Equipo</th>
-                    <th>IP</th>
-                    <th>K</th>
-                    <th>CL</th>
-                    <th>CS</th>
-                    <th>G</th>
-                    <th>P</th>
-                    <th>ERA (Efectividad)</th>
-                    
+                    <th class="ordenable" onclick="ordenarTablaPitchers('ip')">IP</th>
+                    <th class="ordenable" onclick="ordenarTablaPitchers('k')">K</th>
+                    <th class="ordenable" onclick="ordenarTablaPitchers('cl')">CL</th>
+                    <th class="ordenable" onclick="ordenarTablaPitchers('cs')">CS</th>
+                    <th class="ordenable" onclick="ordenarTablaPitchers('g')">G</th>
+                    <th class="ordenable" onclick="ordenarTablaPitchers('p')">P</th>
+                    <th class="ordenable" onclick="ordenarTablaPitchers('era')">ERA (Efectividad)</th>
                 </tr>
             </thead>
             <tbody id="tabla-pitchers">
                 <!-- Filas dinámicas de pitchers -->
             </tbody>
         </table>
-        
     </div> <!-- Cierre del contenedor interior -->
     
 </div> <!-- CIERRE FINAL DE LA PESTAÑA EQUIPOS -->
@@ -593,6 +608,15 @@ async function modificarJugador(idFirebase, nombreJugador, equipoJugador) {
 
 // Cargar tabla de pitchers
 // Cargar tabla de pitchers
+// Función para que al hacer clic en los encabezados de la tabla de pitchers también ordene
+function ordenarTablaPitchers(criterio) {
+    const selectOrden = document.getElementById('ordenar-pitchers');
+    if (selectOrden) {
+        selectOrden.value = criterio;
+        cargarPitchers();
+    }
+}
+
 async function cargarPitchers() {
     try {
         const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/pitchers', { cache: 'no-store' });
@@ -615,10 +639,44 @@ async function cargarPitchers() {
             }
         }
 
+        // Pre-calculamos los números y el ERA antes de ordenar
+        datos.forEach(pitcher => {
+            pitcher.ip = parseFloat(pitcher.ip) || 0;
+            pitcher.k  = parseInt(pitcher.k) || 0;
+            pitcher.cl = parseInt(pitcher.cl) || 0;
+            pitcher.cs = parseInt(pitcher.cs) || 0;
+            pitcher.g  = parseInt(pitcher.g) || 0;
+            pitcher.p  = parseInt(pitcher.p) || 0;
+
+            pitcher.era = 0.00;
+            if (pitcher.ip > 0) {
+                pitcher.era = (pitcher.cl * 9.0) / pitcher.ip;
+            }
+        });
+
+        // 1. Filtro Global por Equipo
         const selectFiltro = document.getElementById('filtro-equipo');
         const equipoSeleccionado = selectFiltro ? selectFiltro.value : 'Todos';
         if (equipoSeleccionado !== "Todos") {
             datos = datos.filter(p => (p.equipo || '').trim() === equipoSeleccionado.trim());
+        }
+
+        // 2. Ordenamiento de Pitchers
+        const selectOrden = document.getElementById('ordenar-pitchers');
+        const criterio = selectOrden ? selectOrden.value : 'defecto';
+
+        if (criterio !== 'defecto') {
+            if (criterio === 'era') {
+                // ERA: de MENOR a MAYOR (quienes tienen 0 IP van al final)
+                datos.sort((a, b) => {
+                    if (a.ip === 0 && b.ip > 0) return 1;
+                    if (b.ip === 0 && a.ip > 0) return -1;
+                    return a.era - b.era;
+                });
+            } else {
+                // Resto de estadísticas (IP, K, G, P, CL, CS): de MAYOR a MENOR
+                datos.sort((a, b) => (parseFloat(b[criterio]) || 0) - (parseFloat(a[criterio]) || 0));
+            }
         }
 
         const tabla = document.getElementById('tabla-pitchers');
@@ -626,24 +684,19 @@ async function cargarPitchers() {
         tabla.innerHTML = '';
 
         datos.forEach(pitcher => {
-            let eraCalculado = 0.00;
-            if (pitcher.ip && parseFloat(pitcher.ip) > 0) {
-                eraCalculado = (parseInt(pitcher.cl || 0) * 9) / parseFloat(pitcher.ip);
-            }
-
             const fila = `<tr>
                 <td>${pitcher.nombre || 'Sin nombre'}</td>
                 <td>${pitcher.equipo || '-'}</td>
-                <td>${pitcher.ip || 0}</td>
-                <td>${pitcher.k || 0}</td>
-                <td>${pitcher.cl || 0}</td>
-                <td>${pitcher.cs || 0}</td>
-                <td>${pitcher.g || 0}</td>
-                <td>${pitcher.p || 0}</td>
-                <td><strong>${eraCalculado.toFixed(2)}</strong></td>
+                <td>${pitcher.ip}</td>
+                <td>${pitcher.k}</td>
+                <td>${pitcher.cl}</td>
+                <td>${pitcher.cs}</td>
+                <td>${pitcher.g}</td>
+                <td>${pitcher.p}</td>
+                <td><strong>${pitcher.era.toFixed(2)}</strong></td>
                 <td class="admin-solo">
-                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer; margin-right: 5px;" onclick="modificarPitcher(${pitcher.idFirebase}, '${pitcher.nombre}', '${pitcher.equipo}')">Editar</button>
-                    <button style="background-color: #d32f2f; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer;" onclick="eliminarPitcher(${pitcher.idFirebase}, '${pitcher.nombre}')">Borrar</button>
+                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer; margin-right: 5px;" onclick="modificarPitcher('${pitcher.idFirebase}', '${pitcher.nombre}', '${pitcher.equipo}')">Editar</button>
+                    <button style="background-color: #d32f2f; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer;" onclick="eliminarPitcher('${pitcher.idFirebase}', '${pitcher.nombre}')">Borrar</button>
                 </td>
             </tr>`;
             tabla.innerHTML += fila;
