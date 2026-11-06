@@ -142,45 +142,48 @@ th.ordenable:hover { background-color: #322a9a; }
   <h2>Tabla de Posiciones</h2>
   
     
-    <div class="formulario admin-solo">
-        <select id="nombre-equipo">
-            <option value="Bandoleros">Bandoleros</option>
-            <option value="Warriors N">Warriors N</option>
-            <option value="Warriors B">Warriors B</option>
-            <option value="Elite">Elite</option>
-            <option value="Torno Miranda">Torno Miranda</option>
-            <option value="Hidroponias">Hidroponias</option>
-            <option value="La Guardia">La Guardia</option>
-            <option value="Pandas">Pandas</option>
-            <option value="Apocalipsis">Apocalipsis </option>
-        </select>
-        <input type="number" id="eq-jg" placeholder="Jugados (JJ)" min="0">
-        <input type="number" id="eq-jp" placeholder="Ganados (JG)" min="0">
-        <input type="number" id="eq-je" placeholder="Perdidos (JP)" min="0"> <!-- NUEVO -->
-        <input type="number" id="eq-cf" placeholder="Empatados (JE)" min="0">
-        <input type="number" id="eq-cc" placeholder="Diferen" min="0">
-        <button onclick="actualizarEquipo()">Sumar al Récord</button>
-        <button style="background-color: #2196F3; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;" onclick="guardarEdicion()">Guardar Edición</button>
-    </div>
+    <!-- FORMULARIO DE EQUIPOS (Solo Admin) -->
+<div class="formulario admin-solo" style="margin-bottom: 15px;">
+    <select id="nombre-eq">
+        <option value="Bandoleros">Bandoleros</option>
+        <option value="Warriors N">Warriors N</option>
+        <option value="Warriors B">Warriors B</option>
+        <option value="Elite">Elite</option>
+        <option value="Torno Miranda">Torno Miranda</option>
+        <option value="Hidroponias">Hidroponias</option>
+        <option value="La Guardia">La Guardia</option>
+        <option value="Pandas">Pandas</option>
+        <option value="Apocalipsis">Apocalipsis</option>
+    </select>
+    <input type="number" id="jj-eq" placeholder="Jugados (JJ)">
+    <input type="number" id="jg-eq" placeholder="Ganados (JG)">
+    <input type="number" id="jp-eq" placeholder="Perdidos (JP)">
+    <input type="number" id="je-eq" placeholder="Empatados (JE)">
+    <input type="number" id="dif-eq" placeholder="Diferencia (DIF)">
+    
+    <button onclick="actualizarEquipo()" style="background-color: #28a745; color: white;">Sumar al Récord</button>
+    <button onclick="guardarEdicionEquipo()" style="background-color: #0088cc; color: white;">Guardar Edición</button>
+</div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Equipo</th>
-                <th>JJ</th>
-                <th>JG</th>
-                <th>JP</th> <!-- NUEVO -->
-                <th>JE</th>
-                <th>DIF</th>
-                <th style="background-color: #322a9a;">PTS</th> <!-- NUEVO PUNTOS -->
-                <th class="admin-solo" style="background-color: #322a9a; color: white;">Acción</th>
-            </tr>
-            
-        </thead>
-        <tbody id="tabla-equipos">
-            <!-- Filas de equipos -->
-        </tbody>
-    </table>
+<!-- TABLA DE POSICIONES -->
+<table>
+    <thead>
+        <tr>
+            <th style="width: 35px;">#</th>
+            <th style="text-align: left; padding-left: 12px;">Equipo</th>
+            <th>JJ</th>
+            <th>JG</th>
+            <th>JP</th>
+            <th>JE</th>
+            <th>DIF</th>
+            <th style="background-color: #311b92;">PTS</th>
+            <th class="admin-solo" style="background-color: #311b92;">Acción</th>
+        </tr>
+    </thead>
+    <tbody id="tabla-posiciones">
+        <!-- Se llena dinámicamente con JS -->
+    </tbody>
+</table>
 </div>
 
 <!-- SECCIÓN 2: Equipos (Bateadores y Pitchers) -->
