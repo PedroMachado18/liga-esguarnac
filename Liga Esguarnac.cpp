@@ -103,6 +103,7 @@ const std::string ARCHIVO_EQUIPOS = "equipos.json";
 class EquipoObj {
 public:
     std::string nombre;
+    int jj;
     int jg; // Juegos Ganados
     int jp; // Juegos Perdidos
     int cf; // Carreras a Favor
@@ -110,7 +111,8 @@ public:
 
     EquipoObj(std::string _nombre) : nombre(_nombre), jg(0), jp(0), cf(0), cc(0) {}
 
-    void registrar(int _jg, int _jp, int _cf, int _cc) {
+    void registrar(int _jj ,int _jg, int _jp, int _cf, int _cc) {
+        jj += _jj;
         jg += _jg;
         jp += _jp;
         cf += _cf;
@@ -319,6 +321,7 @@ svr.Post("/api/registrar_pitcher", [](const httplib::Request& req, httplib::Resp
         for (auto& eq : baseDeDatosEquipos) {
             if (eq["nombre"] == nombreBuscado) {
                 // En lugar de sumar, aquí reemplazamos por los nuevos valores
+                eq["jj"] = datos["jj"].get<int>();
                 eq["jg"] = datos["jg"].get<int>();
                 eq["jp"] = datos["jp"].get<int>();
                 eq["je"] = datos["je"].get<int>();
@@ -486,6 +489,7 @@ svr.Options("/api/equipos", [](const httplib::Request& req, httplib::Response& r
         // 2. Buscar el equipo y sumar los nuevos datos a los que ya existen
         for (auto& eq : listaEquipos) {
             if (eq["nombre"] == nombreBuscado) {
+                eq["jj"] = eq.value("jj", 0) + datosRecibidos.value("jj", 0);
                 eq["jg"] = eq.value("jg", 0) + datosRecibidos.value("jg", 0);
                 eq["jp"] = eq.value("jp", 0) + datosRecibidos.value("jp", 0);
                 eq["je"] = eq.value("je", 0) + datosRecibidos.value("je", 0);
@@ -554,6 +558,7 @@ svr.Post("/api/editar_equipo", [](const httplib::Request& req, httplib::Response
         for (auto& eq : listaEquipos) {
             if (eq["nombre"] == nombreBuscado) {
                 // AQUÍ REEMPLAZAMOS (=) EN LUGAR DE SUMAR (+)
+                eq["jj"] = datosRecibidos.value("jj", 0);
                 eq["jg"] = datosRecibidos.value("jg", 0);
                 eq["jp"] = datosRecibidos.value("jp", 0);
                 eq["je"] = datosRecibidos.value("je", 0);
