@@ -337,19 +337,7 @@ svr.Post("/api/registrar_pitcher", [](const httplib::Request& req, httplib::Resp
 
     std::cout << "Servidor API de Beisbol corriendo en http://localhost:8080...\n";
     // Endpoint DELETE: Eliminar Pitcher
-    svr.Delete("/api/eliminar_pitcher", [](const httplib::Request& req, httplib::Response& res) {
-        res.set_header("Access-Control-Allow-Origin", "*");
-        auto datos = json::parse(req.body);
-        std::string nombreAEliminar = datos["nombre"].get<std::string>();
-        std::string equipoAEliminar = datos["equipo"].get<std::string>();
-
-        baseDeDatosPitchers.erase(std::remove_if(baseDeDatosPitchers.begin(), baseDeDatosPitchers.end(),
-            [&](const json& p) { return p["nombre"] == nombreAEliminar && p["equipo"] == equipoAEliminar; }),
-            baseDeDatosPitchers.end());
-
-        guardarDatos();
-        res.set_content("{\"status\":\"eliminado\"}", "application/json");
-    });
+    
 
     // Endpoint PUT: Modificar Pitcher
     svr.Put("/api/modificar_pitcher", [](const httplib::Request& req, httplib::Response& res) {
