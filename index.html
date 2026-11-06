@@ -159,6 +159,7 @@ th.ordenable:hover { background-color: #322a9a; }
         <input type="number" id="eq-cf" placeholder="A Favor (CF)" min="0">
         <input type="number" id="eq-cc" placeholder="En Contra (CC)" min="0">
         <button onclick="actualizarEquipo()">Sumar al Récord</button>
+        <button style="background-color: #2196F3; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer; margin-left: 10px;" onclick="guardarEdicion()">Guardar Edición</button>
     </div>
 
     <table>
@@ -695,18 +696,19 @@ async function cargarEquipos() {
         const tabla = document.getElementById('tabla-equipos');
         tabla.innerHTML = ''; 
         
-        datos.forEach(eq => {
+datos.forEach(eq => {
             const fila = `<tr>
                 <td><strong>${eq.nombre}</strong></td>
                 <td>${eq.jg}</td>
                 <td>${eq.jp}</td>
                 <td>${eq.je || 0}</td>
-                <td>${eq.cf}<d>
+                <td>${eq.cf}</td> <!-- CORREGIDO -->
                 <td>${eq.cc}</td>
                 <td><strong>${eq.pts || 0}</strong></td>
                 
-                <td class = "admin-solo">
-                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;" onclick="modificarEquipo('${eq.nombre}')">Editar</button>
+                <td class="admin-solo">
+                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;" 
+                    onclick="prepararEdicion('${eq.nombre}', ${eq.jg}, ${eq.jp}, ${eq.je || 0}, ${eq.cf}, ${eq.cc})">Editar</button>
                 </td>
             </tr>`;
             
@@ -918,6 +920,62 @@ const respuesta = await fetch(`https://liga-esguarnac.onrender.com/resultados?id
     } catch (error) {
         console.error("Error al intentar eliminar:", error);
         alert("Hubo un problema de conexión con el servidor.");
+    }
+}
+let equipoAEditar = ""; // Variable para recordar a quién estamos editando
+
+function prepararEdicion(nombre, jg, jp, je, cf, cc) {
+    equipoAEditar = nombre;
+    
+    // Llenamos las cajas automáticamente con los números actuales
+    document.getElementById('eq-jg').value = jg;
+    document.getElementById('eq-jp').value = jp;
+    document.getElementById('eq-je').value = je;
+    document.getElementById('eq-cf').value = cf;
+    document.getElementById('eq-cc').value = cc;
+    
+    alert(`Datos de ${nombre} listos.\nModifica los números en las cajas y luego presiona "Guardar Edición".`);
+}
+
+async function guardarEdicion() {
+    if (equipoAEditar === "") {
+        alert("Primero haz clic en 'Editar' en algún equipo de la tabla.");
+        return;
+    }
+    
+    const payload = {
+        nombre: equipoAEditar,
+        jg: parseInt(document.getElementById('eq-jg').value) || 0,
+        jp: parseInt(document.getElementById('eq-jp').value) || 0,
+        je: parseInt(document.getElementById('eq-je').value) || 0,
+        cf: parseInt(document.getElementById('eq-cf').value) || 0,
+        cc: parseInt(document.getElementById('eq-cc').value) || 0
+    };
+
+    try {
+        const response = await fetch('https://liga-esguarnac.onrender.com/api/editar_equipo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            alert("Equipo sobrescrito correctamente.");
+            equipoAEditar = ""; // Limpiamos la memoria
+            
+            // Limpiamos las cajas
+            document.getElementById('eq-jg').value = '';
+            document.getElementById('eq-jp').value = '';
+            document.getElementById('eq-je').value = '';
+            document.getElementById('eq-cf').value = '';
+            document.getElementById('eq-cc').value = '';
+            
+            await cargarEquipos(); // Recargar tabla
+        } else {
+            alert("Error al editar el equipo.");
+        }
+    } catch (error) {
+        console.error(error);
     }
 }
 // Equipo 4. Ejecutar al iniciar

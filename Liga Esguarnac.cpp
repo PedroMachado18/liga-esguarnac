@@ -558,6 +558,57 @@ svr.Options("/api/equipos", [](const httplib::Request& req, httplib::Response& r
     res.status = 500;
     res.set_content("Error al guardar en Firebase", "text/plain");
 });
+// Endpoint POST: SOBRESCRIBIR récord (Botón Editar)
+svr.Post("/api/editar_equipo", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    
+    httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+    cli.enable_server_certificate_verification(false);
+    
+    nlohmann::json datosRecibidos = nlohmann::json::parse(req.body);
+    std::string nombreBuscado = datosRecibidos["nombre"].get<std::string>();
+    
+    auto fire_get = cli.Get("/equipos.json");
+    if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
+        nlohmann::json listaEquipos = nlohmann::json::parse(fire_get->body);
+        bool encontrado = false;
+        
+        for (auto& eq : listaEquipos) {
+            if (eq["nombre"] == nombreBuscado) {
+                // AQUÍ REEMPLAZAMOS (=) EN LUGAR DE SUMAR (+)
+                eq["jg"] = datosRecibidos.value("jg", 0);
+                eq["jp"] = datosRecibidos.value("jp", 0);
+                eq["je"] = datosRecibidos.value("je", 0);
+                eq["cf"] = datosRecibidos.value("cf", 0);
+                eq["cc"] = datosRecibidos.value("cc", 0);
+                
+                // Recalculamos los puntos absolutos
+                eq["pts"] = (eq["jg"].get<int>() * 3) + (eq["je"].get<int>() * 1);
+                encontrado = true;
+                break;
+            }
+        }
+        
+        if (encontrado) {
+            auto fire_put = cli.Put("/equipos.json", listaEquipos.dump(), "application/json");
+            if (fire_put && fire_put->status == 200) {
+                res.status = 200;
+                res.set_content("Editado correctamente", "text/plain");
+                return;
+            }
+        }
+    }
+    res.status = 500;
+    res.set_content("Error al editar en Firebase", "text/plain");
+});
+
+// Ruta de Permisos CORS Obligatoria
+svr.Options("/api/editar_equipo", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    res.set_header("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.set_header("Access-Control-Allow-Headers", "Content-Type");
+    res.status = 200;
+});
 // 1. Ruta GET (Leer)
 svr.Get("/resultados", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
