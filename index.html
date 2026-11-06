@@ -332,7 +332,7 @@ th.ordenable:hover { background-color: #322a9a; }
             <div class="formulario admin-solo"></div>
             <input type="date" id="fecha-juego" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
             
-            <select id="equipo-local">
+            <select id="equipo-Visitante">
                 <option value="Equipo 1">Equipo 1 (Visitante)</option>
                 <option value="Equipo 2">Equipo 2 (Visitante)</option>
                 <option value="Equipo 3">Equipo 3 (Visitante)</option>
@@ -343,21 +343,21 @@ th.ordenable:hover { background-color: #322a9a; }
                 <option value="Equipo 8">Equipo 8 (Visitante)</option>
             </select>
             
-            <input type="number" id="carreras-visitante" placeholder="Carreras" min="0" style="width: 100px;">
+            <input type="number" id="carreras-Visitante" placeholder="Carreras" min="0" style="width: 100px;">
             
             <span style="font-weight: bold; font-size: 18px;"> VS </span>
             
-            <input type="number" id="carreras-local" placeholder="Carreras" min="0" style="width: 100px;">
+            <input type="number" id="carreras-Local" placeholder="Carreras" min="0" style="width: 100px;">
             
-            <select id="equipo-visitante">
-                <option value="Equipo 1">Equipo 1 (local)</option>
-                <option value="Equipo 2">Equipo 2 (local)</option>
-                <option value="Equipo 3">Equipo 3 (local)</option>
-                <option value="Equipo 4">Equipo 4 (local)</option>
-                <option value="Equipo 5">Equipo 5 (local)</option>
-                <option value="Equipo 6">Equipo 6 (local)</option>
-                <option value="Equipo 7">Equipo 7 (local)</option>
-                <option value="Equipo 8">Equipo 8 (local)</option>
+            <select id="equipo-Local">
+                <option value="Equipo 1">Equipo 1 (Local)</option>
+                <option value="Equipo 2">Equipo 2 (Local)</option>
+                <option value="Equipo 3">Equipo 3 (Local)</option>
+                <option value="Equipo 4">Equipo 4 (Local)</option>
+                <option value="Equipo 5">Equipo 5 (Local)</option>
+                <option value="Equipo 6">Equipo 6 (Local)</option>
+                <option value="Equipo 7">Equipo 7 (Local)</option>
+                <option value="Equipo 8">Equipo 8 (Local)</option>
             </select>
             
             <button onclick="guardarResultado()">Subir Resultado</button>
@@ -369,11 +369,11 @@ th.ordenable:hover { background-color: #322a9a; }
             <thead>
                 <tr>
                     <th>Fecha</th>
-                    <th>Equipo local</th>
+                    <th>Equipo Visitante</th>
                     <th>C</th>
                     <th>VS</th>
                     <th>C</th>
-                    <th>Equipo visitante</th>
+                    <th>Equipo Local</th>
                     
                 </tr>
             </thead>
@@ -870,23 +870,23 @@ function cambiarPestana(evento, idSeccion) {
 // Función para enviar el nuevo resultado al servidor C++
 async function guardarResultado() {
     const fecha = document.getElementById('fecha-juego').value;
-    const local = document.getElementById('equipo-local').value;
-    const carrerasLocal = document.getElementById('carreras-local').value;
-    const visitante = document.getElementById('equipo-visitante').value;
-    const carrerasVisitante = document.getElementById('carreras-visitante').value;
+    const Visitante = document.getElementById('equipo-Visitante').value;
+    const carrerasVisitante = document.getElementById('carreras-Visitante').value;
+    const Local = document.getElementById('equipo-Local').value;
+    const carrerasLocal = document.getElementById('carreras-Local').value;
 
     // Validación básica para que no envíen campos vacíos
-    if (!fecha || !local || carrerasLocal === "" || !visitante || carrerasVisitante === "") {
+    if (!fecha || !Visitante || carrerasVisitante === "" || !Local || carrerasLocal === "") {
         alert('Por favor, completa todos los datos del juego.');
         return;
     }
 
     const nuevoJuego = {
         fecha: fecha,
-        local: local,
-        carrerasLocal: parseInt(carrerasLocal),
-        visitante: visitante,
-        carrerasVisitante: parseInt(carrerasVisitante)
+        Visitante : Visitante,
+        carrerasVisitante: parseInt(carrerasVisitante),
+        Local : Local,
+        carrerasLocal : parseInt(carrerasLocal)
     };
 
     try {
@@ -901,8 +901,8 @@ async function guardarResultado() {
             cargarResultados(); // Recargar la tabla automáticamente
             
             // Limpiar las carreras para el siguiente registro
-            document.getElementById('carreras-local').value = '';
-            document.getElementById('carreras-visitante').value = '';
+            document.getElementById('carreras-Visitante').value = '';
+            document.getElementById('carreras-Local').value = '';
         }
     } catch (error) {
         console.error('Error al guardar:', error);
@@ -924,11 +924,11 @@ async function cargarResultados() {
             console.log(juego);
             tr.innerHTML = `
                 <td>${juego.fecha}</td>
-                <td><strong>${juego.local}</strong></td>
-                <td>${juego.carrerasLocal}</td>
-                <td>VS</td>
+                <td><strong>${juego.Visitante}</strong></td>
                 <td>${juego.carrerasVisitante}</td>
-                <td><strong>${juego.visitante}</strong></td>
+                <td>VS</td>
+                <td>${juego.carrerasLocal}</td>
+                <td><strong>${juego.Local}</strong></td>
                 
                 <td class="admin-solo"><button onclick="eliminarResultado(${index})" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; cursor: pointer;">Eliminar</button></td>
             `;
