@@ -8,7 +8,7 @@
         th.ordenable { cursor: pointer; text-decoration: underline; }
 th.ordenable:hover { background-color: #322a9a; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; padding: 20px; }
-        .contenedor { max-width: 900px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.Equipo 1); }
+        .contenedor { max-width: 900px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.Bandoleros); }
         h2 { color: #1e5631; border-bottom: 2px solid #1e5631; padding-bottom: 10px; font-size: 20px; }
         
         /* Estilos del Formulario */
@@ -144,7 +144,7 @@ th.ordenable:hover { background-color: #322a9a; }
     
     <div class="formulario admin-solo">
         <select id="nombre-equipo">
-            <option value="Equipo 1">Equipo 1</option>
+            <option value="Bandoleros">Bandoleros</option>
             <option value="Equipo 2">Equipo 2</option>
             <option value="Equipo 3">Equipo 3</option>
             <option value="Equipo 4">Equipo 4</option>
@@ -194,7 +194,7 @@ th.ordenable:hover { background-color: #322a9a; }
             <div class="formulario admin-solo"></div>
             <input type="text" id="nombre" placeholder="Nombre del Jugador" required>
             <select id="equipo">
-                <option value="Equipo 1">Equipo 1</option>
+                <option value="Bandoleros">Bandoleros</option>
                 <option value="Equipo 2">Equipo 2</option>
                 <option value="Equipo 3">Equipo 3</option>
                 <option value="Equipo 4">Equipo 4</option>
@@ -220,7 +220,7 @@ th.ordenable:hover { background-color: #322a9a; }
             <label for="filtro-equipo" style="font-weight: bold; color: #1e5631;">Filtrar por Equipo (Global):</label>
             <select id="filtro-equipo" onchange="cargarJugadores(); cargarPitchers();" style="margin-left: 10px; padding: 5px;">
                 <option value="Todos">Todos los equipos</option>
-                <option value="Equipo 1">Equipo 1</option>
+                <option value="Bandoleros">Bandoleros</option>
                 <option value="Equipo 2">Equipo 2</option>
                 <option value="Equipo 3">Equipo 3</option>
                 <option value="Equipo 4">Equipo 4</option>
@@ -280,7 +280,7 @@ th.ordenable:hover { background-color: #322a9a; }
             <div class="formulario admin-solo"></div>
             <input type="text" id="nombre-p" placeholder="Nombre del Pitcher" required>
             <select id="equipo-p">
-                <option value="Equipo 1">Equipo 1</option>
+                <option value="Bandoleros">Bandoleros</option>
                 <option value="Equipo 2">Equipo 2</option>
                 <option value="Equipo 3">Equipo 3</option>
                 <option value="Equipo 4">Equipo 4</option>
@@ -348,7 +348,7 @@ th.ordenable:hover { background-color: #322a9a; }
             <input type="date" id="fecha-juego" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
             
             <select id="equipo-Visitante">
-                <option value="Equipo 1">Equipo 1 (Visitante)</option>
+                <option value="Bandoleros">Bandoleros (Visitante)</option>
                 <option value="Equipo 2">Equipo 2 (Visitante)</option>
                 <option value="Equipo 3">Equipo 3 (Visitante)</option>
                 <option value="Equipo 4">Equipo 4 (Visitante)</option>
@@ -365,7 +365,7 @@ th.ordenable:hover { background-color: #322a9a; }
             <input type="number" id="carreras-Local" placeholder="Carreras" min="0" style="width: 100px;">
             
             <select id="equipo-Local">
-                <option value="Equipo 1">Equipo 1 (Local)</option>
+                <option value="Bandoleros">Bandoleros (Local)</option>
                 <option value="Equipo 2">Equipo 2 (Local)</option>
                 <option value="Equipo 3">Equipo 3 (Local)</option>
                 <option value="Equipo 4">Equipo 4 (Local)</option>
@@ -400,8 +400,8 @@ th.ordenable:hover { background-color: #322a9a; }
 </div>
 <script>
     
-// Equipo 1. Función para cargar y dibujar la tabla
-// Equipo 1. Función para cargar y dibujar la tabla con filtro
+// Bandoleros. Función para cargar y dibujar la tabla
+// Bandoleros. Función para cargar y dibujar la tabla con filtro
 function ordenarTabla(criterio) {
     const selectOrden = document.getElementById('ordenar-por');
     if (selectOrden) {
