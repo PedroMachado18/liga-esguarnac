@@ -392,7 +392,9 @@ async function cargarJugadores() {
         // 1. SOLUCIÓN CACHÉ: Evitamos que el navegador guarde datos viejos
         const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/bateadores', { cache: 'no-store' });
         let datos = await respuesta.json();
-
+        if (datos !== null && !Array.isArray(datos)) {
+            datos = Object.values(datos);
+        }
         // Asegúrate de que el ID coincida con el <tbody> de tu HTML para los bateadores
         const tabla = document.getElementById('tabla-jugadores'); 
         if (!tabla) return;
