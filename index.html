@@ -389,39 +389,47 @@ th.ordenable:hover { background-color: #322a9a; }
 // Equipo 1. Función para cargar y dibujar la tabla con filtro
 async function cargarJugadores() {
     try {
-        // 1. SOLUCIÓN CACHÉ: Evitamos que el navegador guarde datos viejos
         const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/bateadores', { cache: 'no-store' });
         let datos = await respuesta.json();
-        if (datos !== null && !Array.isArray(datos)) {
-            datos = Object.values(datos);
+        
+        if (datos !== null) {
+            if (!Array.isArray(datos)) {
+                datos = Object.values(datos);
+            }
+            datos = datos.filter(item => item !== null && typeof item === 'object');
+        } else {
+            datos = [];
         }
-        // Asegúrate de que el ID coincida con el <tbody> de tu HTML para los bateadores
+
+        // --- FILTRO GLOBAL DE EQUIPOS PARA BATEADORES ---
+        const equipoSeleccionado = document.getElementById('filtro-equipo') ? document.getElementById('filtro-equipo').value : 'Todos';
+        if (equipoSeleccionado !== "Todos") {
+            datos = datos.filter(jugador => jugador.equipo === equipoSeleccionado);
+        }
+
         const tabla = document.getElementById('tabla-jugadores'); 
         if (!tabla) return;
         tabla.innerHTML = '';
 
         datos.forEach(jugador => {
-            // 2. SOLUCIÓN MATEMÁTICA: Extraemos las variables de forma segura
-            let tb = jugador.tb || 0; // Turnos al bate
-            let h = jugador.h || 0;   // Hits
-            let d2b = jugador.d2b || 0; // Dobles
-            let d3b = jugador.d3b || 0; // Triples
-            let hr = jugador.hr || 0; // Jonrones
+            let tb = jugador.tb || 0;
+            let h = jugador.h || 0;
+            let d2b = jugador.d2b || 0;
+            let d3b = jugador.d3b || 0;
+            let hr = jugador.hr || 0;
 
-            // Calculamos AVG (Average) y SLG (Slugging) matemáticamente aquí
             let avg = 0.000;
             let slg = 0.000;
 
             if (tb > 0) {
                 avg = h / tb;
-                // Sencillos son los hits que NO fueron dobles, triples ni jonrones
                 let sencillos = h - d2b - d3b - hr; 
                 let basesTotales = sencillos + (d2b * 2) + (d3b * 3) + (hr * 4);
                 slg = basesTotales / tb;
             }
 
             const fila = `<tr>
-                <td>${jugador.nombre}</td>
+                <td>${jugador.nombre || 'Sin nombre'}</td>
                 <td>${jugador.equipo || '-'}</td>
                 <td>${tb}</td>
                 <td>${h}</td>
@@ -434,13 +442,11 @@ async function cargarJugadores() {
                 <td>${jugador.k || 0}</td>
                 <td><strong>${avg.toFixed(3)}</strong></td>
                 <td><strong>${slg.toFixed(3)}</strong></td>
-                
                 <td class="admin-solo">
                     <button style="background-color: #ff9800; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer; margin-right: 5px;" onclick="modificarJugador('${jugador.nombre}')">Editar</button>
                     <button style="background-color: #d32f2f; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;" onclick="eliminarJugador('${jugador.nombre}')">Borrar</button>
                 </td>
             </tr>`;
-            
             tabla.innerHTML += fila;
         });
         
