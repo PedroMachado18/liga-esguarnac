@@ -544,33 +544,38 @@ async function modificarJugador(nombreJugador, equipoJugador) {
 // Cargar tabla de pitchers
 async function cargarPitchers() {
     try {
-        // 1. SOLUCIÓN CACHÉ: Agregamos { cache: 'no-store' }
         const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/pitchers', { cache: 'no-store' });
         let datos = await respuesta.json();
 
-        // 2. Leer qué equipo seleccionó el usuario
-        const equipoSeleccionado = document.getElementById('filtro-equipo') ? document.getElementById('filtro-equipo').value : 'Todos';
+        // --- EL ESCUDO PROTECTOR ---
+        // Transforma el diccionario de Firebase de vuelta a una lista normal
+        if (datos !== null && !Array.isArray(datos)) {
+            datos = Object.values(datos);
+        }
+        
+        // Si la base de datos está totalmente vacía, evitamos errores
+        if (!datos || datos.length === 0) {
+            document.getElementById('tabla-pitchers').innerHTML = '';
+            return;
+        }
 
-        // 3. Aplicar el filtro de equipo
+        // 1. Filtro Global de Equipos
+        const equipoSeleccionado = document.getElementById('filtro-equipo') ? document.getElementById('filtro-equipo').value : 'Todos';
         if (equipoSeleccionado !== "Todos") {
             datos = datos.filter(pitcher => pitcher.equipo === equipoSeleccionado);
         }
 
-        // 4. Limitar a 10 lanzadores si estamos viendo "Todos"
-        if (equipoSeleccionado === "Todos") {
-            datos = datos.slice(0, 10);
-        }
+        // (Opcional) Aquí puedes dejar tu código de ordenamiento si lo tenías
 
         const tabla = document.getElementById('tabla-pitchers');
+        if (!tabla) return;
         tabla.innerHTML = '';
 
         datos.forEach(pitcher => {
-            // 5. SOLUCIÓN MATEMÁTICA: Calculamos el ERA aquí mismo
-            // Fórmula estándar: (Carreras Limpias * 9) / Innings Pitcheados
-            // Si los innings son 0 (para evitar dividir por cero), el ERA es 0.00
+            // Cálculo matemático seguro de la Efectividad (ERA)
             let eraCalculado = 0.00;
-            if (pitcher.ip && pitcher.ip > 0) {
-                eraCalculado = (pitcher.cl * 9) / pitcher.ip;
+            if (pitcher.ip && parseFloat(pitcher.ip) > 0) {
+                eraCalculado = (parseInt(pitcher.cl || 0) * 9) / parseFloat(pitcher.ip);
             }
 
             const fila = `<tr>
@@ -593,13 +598,12 @@ async function cargarPitchers() {
             tabla.innerHTML += fila;
         });
         
-        aplicarModoAdmin();
+        if (typeof aplicarModoAdmin === 'function') aplicarModoAdmin();
         
     } catch (error) {
         console.error("Error cargando pitchers:", error);
     }
 }
-
 // Registrar un pitcher nuevo o sumar estadísticas
 // Registrar un pitcher nuevo o sumar estadísticas
 async function agregarPitcher() {
