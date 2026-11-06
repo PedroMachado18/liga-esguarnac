@@ -389,59 +389,63 @@ th.ordenable:hover { background-color: #322a9a; }
 // Equipo 1. Función para cargar y dibujar la tabla con filtro
 async function cargarJugadores() {
     try {
-        const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/jugadores');
+        // 1. SOLUCIÓN CACHÉ: Evitamos que el navegador guarde datos viejos
+        const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/bateadores', { cache: 'no-store' });
         let datos = await respuesta.json();
-        
-        const equipoSeleccionado = document.getElementById('filtro-equipo').value;
-        const criterioOrden = document.getElementById('ordenar-por') ? document.getElementById('ordenar-por').value : 'defecto';
-        
-        // Equipo 1. Aplicar el filtro por equipo
-        // Equipo 1. Aplicar el filtro por equipo
-// 1. Aplicar el filtro por equipo
-        if (equipoSeleccionado !== "Todos") {
-            datos = datos.filter(jugador => jugador.equipo === equipoSeleccionado);
-        }
 
-        // 2. Ordenamiento dinámico inteligente
-        if (criterioOrden !== 'defecto') {
-            datos.sort((a, b) => b[criterioOrden] - a[criterioOrden]);
-        }
+        // Asegúrate de que el ID coincida con el <tbody> de tu HTML para los bateadores
+        const tabla = document.getElementById('tabla-jugadores'); 
+        if (!tabla) return;
+        tabla.innerHTML = '';
 
-        // 3. NUEVO: Limitar a 10 jugadores si el filtro es "Todos"
-        if (equipoSeleccionado === "Todos") {
-            datos = datos.slice(0, 10);
-        }
-        
-        const tabla = document.getElementById('tabla-jugadores');
-        tabla.innerHTML = ''; 
-        
-        // Equipo 3. Dibujar la tabla ya filtrada y ordenada
         datos.forEach(jugador => {
+            // 2. SOLUCIÓN MATEMÁTICA: Extraemos las variables de forma segura
+            let tb = jugador.tb || 0; // Turnos al bate
+            let h = jugador.h || 0;   // Hits
+            let d2b = jugador.d2b || 0; // Dobles
+            let d3b = jugador.d3b || 0; // Triples
+            let hr = jugador.hr || 0; // Jonrones
+
+            // Calculamos AVG (Average) y SLG (Slugging) matemáticamente aquí
+            let avg = 0.000;
+            let slg = 0.000;
+
+            if (tb > 0) {
+                avg = h / tb;
+                // Sencillos son los hits que NO fueron dobles, triples ni jonrones
+                let sencillos = h - d2b - d3b - hr; 
+                let basesTotales = sencillos + (d2b * 2) + (d3b * 3) + (hr * 4);
+                slg = basesTotales / tb;
+            }
+
             const fila = `<tr>
                 <td>${jugador.nombre}</td>
                 <td>${jugador.equipo || '-'}</td>
-                <td>${jugador.tb}</td>
-                <td>${jugador.h}</td>
-                <td>${jugador.d2b}</td>
-                <td>${jugador.d3b}</td>
-                <td>${jugador.hr}</td>
+                <td>${tb}</td>
+                <td>${h}</td>
+                <td>${d2b}</td>
+                <td>${d3b}</td>
+                <td>${hr}</td>
                 <td>${jugador.bb || 0}</td>
                 <td>${jugador.ci || 0}</td>
                 <td>${jugador.ca || 0}</td>
                 <td>${jugador.k || 0}</td>
-                <td><strong>${Number(jugador.avg).toFixed(3)}</strong></td>
-                <td><strong>${Number(jugador.slg).toFixed(3)}</strong></td>
+                <td><strong>${avg.toFixed(3)}</strong></td>
+                <td><strong>${slg.toFixed(3)}</strong></td>
                 
-                <td class = "admin-solo">
-                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer; margin-right: 5px;" onclick="modificarJugador('${jugador.nombre}', '${jugador.equipo}')">Editar</button>
-                    <button style="background-color: #d32f2f; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;" onclick="eliminarJugador('${jugador.nombre}', '${jugador.equipo}')">Borrar</button>
+                <td class="admin-solo">
+                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer; margin-right: 5px;" onclick="modificarJugador('${jugador.nombre}')">Editar</button>
+                    <button style="background-color: #d32f2f; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;" onclick="eliminarJugador('${jugador.nombre}')">Borrar</button>
                 </td>
             </tr>`;
+            
             tabla.innerHTML += fila;
         });
-        aplicarModoAdmin();
+        
+        if (typeof aplicarModoAdmin === 'function') aplicarModoAdmin();
+        
     } catch (error) {
-        console.error("Error cargando jugadores:", error);
+        console.error("Error cargando bateadores:", error);
     }
 }
 
