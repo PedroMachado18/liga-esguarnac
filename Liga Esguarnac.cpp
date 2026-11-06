@@ -676,10 +676,6 @@ svr.Delete("/resultados", [](const httplib::Request& req, httplib::Response& res
 // RUTAS PARA ESTADÍSTICAS DE BATEO
 // ==========================================
 
-// ==========================================
-// RUTAS PARA ESTADÍSTICAS DE BATEO
-// ==========================================
-
 // 1. GET: Leer Bateadores
 svr.Get("/api/bateadores", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
@@ -700,55 +696,60 @@ svr.Post("/api/bateadores", [](const httplib::Request& req, httplib::Response& r
     cli.enable_server_certificate_verification(false);
     
     auto fire_get = cli.Get("/bateadores.json");
-    nlohmann::json lista = (fire_get && fire_get->status == 200 && fire_get->body != "null") ? nlohmann::json::parse(fire_get->body) : nlohmann::json::array();
+    nlohmann::json lista = nlohmann::json::array();
+    if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
+        auto parsed = nlohmann::json::parse(fire_get->body);
+        if (parsed.is_array()) {
+            for (auto& el : parsed) if (!el.is_null()) lista.push_back(el);
+        } else if (parsed.is_object()) {
+            for (auto& el : parsed.items()) if (!el.value().is_null()) lista.push_back(el.value());
+        }
+    }
     
     lista.push_back(nlohmann::json::parse(req.body));
     
     auto fire_put = cli.Put("/bateadores.json", lista.dump(), "application/json");
-    if (fire_put && fire_put->status == 200) res.status = 200; else res.status = 500;
+    if (fire_put && fire_put->status == 200) {
+        res.status = 200;
+        res.set_content("{\"status\":\"ok\"}", "application/json");
+    } else res.status = 500;
 });
 
-// 3. PUT: Editar Bateador existente (Botón Naranja)
+// 3. PUT: Editar Bateador existente directamente en Firebase
 svr.Put("/api/bateadores", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     if (req.has_param("id")) {
-        int index = std::stoi(req.get_param_value("id"));
+        std::string id = req.get_param_value("id");
         httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
         cli.enable_server_certificate_verification(false);
-        auto fire_get = cli.Get("/bateadores.json");
-        if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
-            nlohmann::json lista = nlohmann::json::parse(fire_get->body);
-            if (index >= 0 && index < lista.size()) {
-                lista[index] = nlohmann::json::parse(req.body);
-                cli.Put("/bateadores.json", lista.dump(), "application/json");
-                res.status = 200; return;
-            }
+        auto fire_put = cli.Put(("/bateadores/" + id + ".json").c_str(), req.body, "application/json");
+        if (fire_put && fire_put->status == 200) {
+            res.status = 200;
+            res.set_content("{\"status\":\"ok\"}", "application/json");
+            return;
         }
     }
     res.status = 500;
 });
 
-// 4. DELETE: Borrar Bateador (Botón Rojo)
+// 4. DELETE: Borrar Bateador directamente en Firebase
 svr.Delete("/api/bateadores", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     if (req.has_param("id")) {
-        int index = std::stoi(req.get_param_value("id"));
+        std::string id = req.get_param_value("id");
         httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
         cli.enable_server_certificate_verification(false);
-        auto fire_get = cli.Get("/bateadores.json");
-        if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
-            nlohmann::json lista = nlohmann::json::parse(fire_get->body);
-            if (index >= 0 && index < lista.size()) {
-                lista.erase(index);
-                cli.Put("/bateadores.json", lista.dump(), "application/json");
-                res.status = 200; return;
-            }
+        auto fire_del = cli.Delete(("/bateadores/" + id + ".json").c_str());
+        if (fire_del && fire_del->status == 200) {
+            res.status = 200;
+            res.set_content("{\"status\":\"eliminado\"}", "application/json");
+            return;
         }
     }
     res.status = 500;
 });
 
-// 5. OPTIONS: Permisos para Bateadores (Incluye PUT)
+// 5. OPTIONS: Permisos para Bateadores
 svr.Options("/api/bateadores", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     res.set_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -781,55 +782,60 @@ svr.Post("/api/pitchers", [](const httplib::Request& req, httplib::Response& res
     cli.enable_server_certificate_verification(false);
     
     auto fire_get = cli.Get("/pitchers.json");
-    nlohmann::json lista = (fire_get && fire_get->status == 200 && fire_get->body != "null") ? nlohmann::json::parse(fire_get->body) : nlohmann::json::array();
+    nlohmann::json lista = nlohmann::json::array();
+    if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
+        auto parsed = nlohmann::json::parse(fire_get->body);
+        if (parsed.is_array()) {
+            for (auto& el : parsed) if (!el.is_null()) lista.push_back(el);
+        } else if (parsed.is_object()) {
+            for (auto& el : parsed.items()) if (!el.value().is_null()) lista.push_back(el.value());
+        }
+    }
     
     lista.push_back(nlohmann::json::parse(req.body));
     
     auto fire_put = cli.Put("/pitchers.json", lista.dump(), "application/json");
-    if (fire_put && fire_put->status == 200) res.status = 200; else res.status = 500;
+    if (fire_put && fire_put->status == 200) {
+        res.status = 200;
+        res.set_content("{\"status\":\"ok\"}", "application/json");
+    } else res.status = 500;
 });
 
-// 3. PUT: Editar Pitcher existente (Botón Naranja)
+// 3. PUT: Editar Pitcher existente directamente en Firebase
 svr.Put("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     if (req.has_param("id")) {
-        int index = std::stoi(req.get_param_value("id"));
+        std::string id = req.get_param_value("id");
         httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
         cli.enable_server_certificate_verification(false);
-        auto fire_get = cli.Get("/pitchers.json");
-        if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
-            nlohmann::json lista = nlohmann::json::parse(fire_get->body);
-            if (index >= 0 && index < lista.size()) {
-                lista[index] = nlohmann::json::parse(req.body);
-                cli.Put("/pitchers.json", lista.dump(), "application/json");
-                res.status = 200; return;
-            }
+        auto fire_put = cli.Put(("/pitchers/" + id + ".json").c_str(), req.body, "application/json");
+        if (fire_put && fire_put->status == 200) {
+            res.status = 200;
+            res.set_content("{\"status\":\"ok\"}", "application/json");
+            return;
         }
     }
     res.status = 500;
 });
 
-// 4. DELETE: Borrar Pitcher (Botón Rojo)
+// 4. DELETE: Borrar Pitcher directamente en Firebase
 svr.Delete("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     if (req.has_param("id")) {
-        int index = std::stoi(req.get_param_value("id"));
+        std::string id = req.get_param_value("id");
         httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
         cli.enable_server_certificate_verification(false);
-        auto fire_get = cli.Get("/pitchers.json");
-        if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
-            nlohmann::json lista = nlohmann::json::parse(fire_get->body);
-            if (index >= 0 && index < lista.size()) {
-                lista.erase(index);
-                cli.Put("/pitchers.json", lista.dump(), "application/json");
-                res.status = 200; return;
-            }
+        auto fire_del = cli.Delete(("/pitchers/" + id + ".json").c_str());
+        if (fire_del && fire_del->status == 200) {
+            res.status = 200;
+            res.set_content("{\"status\":\"eliminado\"}", "application/json");
+            return;
         }
     }
     res.status = 500;
 });
 
-// 5. OPTIONS: Permisos para Pitchers (Incluye PUT)
+// 5. OPTIONS: Permisos para Pitchers
 svr.Options("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     res.set_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
@@ -851,7 +857,7 @@ if (const char* env_p = std::getenv("PORT")) {
 }
 
 std::cout << "Servidor API de Beisbol corriendo en el puerto " << port << "..." << std::endl;
-svr.set_base_dir("./.");
+
 svr.listen("0.0.0.0", port);
 
 return 0;
