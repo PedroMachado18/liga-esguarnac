@@ -760,16 +760,23 @@ svr.Options("/api/bateadores", [](const httplib::Request& req, httplib::Response
 // ==========================================
 
 // 1. GET: Leer Pitchers
+// 1. GET: Leer Pitchers
 svr.Get("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
-    cli.enable_server_certificate_verification(false);
+    
+    // ¡ESTA LÍNEA ES VITAL! Si falta, Firebase rechaza la conexión y da el Error 500
+    cli.enable_server_certificate_verification(false); 
     
     if (auto fire_res = cli.Get("/pitchers.json")) {
         if (fire_res->status == 200) {
             res.set_content(fire_res->body == "null" ? "[]" : fire_res->body, "application/json");
-        } else res.status = 500;
-    } else res.status = 500;
+        } else {
+            res.status = 500;
+        }
+    } else {
+        res.status = 500;
+    }
 });
 
 // 2. POST: Añadir Pitcher
