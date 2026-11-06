@@ -836,39 +836,154 @@ async function modificarPitcher(idFirebase, nombrePitcher, equipoPitcher) {
         console.error("Error al modificar pitcher:", error);
     }
 }
+// Diccionario con las imágenes de cada equipo (sube tus imágenes a tu carpeta de GitHub con estos nombres)
+const logosEquipos = {
+    "Bandoleros": "bandoleros.png",
+    "Warriors N": "warriors_n.png",
+    "Warriors B": "warriors_b.png",
+    "Elite": "elite.png",
+    "Torno Miranda": "torno_miranda.png",
+    "Hidroponias": "hidroponias.png",
+    "La Guardia": "la_guardia.png",
+    "Pandas": "pandas.png",
+    "Apocalipsis": "apocalipsis.png"
+};
+
 async function cargarEquipos() {
     try {
-        const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/equipos');
-        let datos = await respuesta.json();
-        
-        // ORDENAR AUTOMÁTICAMENTE POR PUNTOS (MAYOR A MENOR)
-        datos.sort((a, b) => (b.pts || 0) - (a.pts || 0));
-        
-        const tabla = document.getElementById('tabla-equipos');
-        tabla.innerHTML = ''; 
-        
-datos.forEach(eq => {
+        const res = await fetch('https://liga-esguarnac.onrender.com/api/equipos', { cache: 'no-store' });
+        let datos = await res.json();
+
+        if (datos !== null) {
+            if (!Array.isArray(datos)) datos = Object.values(datos);
+            datos = datos.filter(item => item !== null && typeof item === 'object');
+        } else {
+            datos = [];
+        }
+
+        // Pre-calcular PTS, JJ y DIF para ordenar del 1ro al 9no lugar
+        datos.forEach(eq => {
+            eq.jg = parseInt(eq.jg) || 0;
+            eq.jp = parseInt(eq.jp) || 0;
+            eq.je = parseInt(eq.je) || 0;
+            
+            // Si ya tiene JJ guardado lo usa; si es 0, suma JG + JP + JE
+            eq.jj = parseInt(eq.jj) || (eq.jg + eq.jp + eq.je);
+
+            // Si tiene DIF directo lo usa; si tenía CF y CC viejos en Firebase, los resta
+            if (eq.dif !== undefined) {
+                eq.dif = parseInt(eq.dif) || 0;
+            } else {
+                eq.dif = (parseInt(eq.cf) || 0) - (parseInt(eq.cc) || 0);
+            }
+
+            // Puntos intactos: Ganados * 3 + Empatados * 1 (JJ no afecta)
+            eq.pts = (eq.jg * 3) + (eq.je * 1);
+        });
+
+        // Ordenar por Puntos (Mayor a menor) y desempate por Diferencia (DIF)
+        datos.sort((a, b) => {
+            if (b.pts !== a.pts) return b.pts - a.pts;
+            return b.dif - a.dif;
+        });
+
+        const tabla = document.getElementById('tabla-posiciones');
+        if (!tabla) return;
+        tabla.innerHTML = '';
+
+        datos.forEach((equipo, index) => {
+            const posicion = index + 1;
+            if (posicion > 9) return; // Limita del 1 al 9
+
+            const rutaLogo = logosEquipos[equipo.nombre] || 'logo.png';
+            const difTexto = equipo.dif > 0 ? `+${equipo.dif}` : equipo.dif;
+
             const fila = `<tr>
-                <td><strong>${eq.nombre}</strong></td>
-                <td>${eq.jg}</td>
-                <td>${eq.jp}</td>
-                <td>${eq.je || 0}</td>
-                <td>${eq.cf}</td> <!-- CORREGIDO -->
-                <td>${eq.cc}</td>
-                <td><strong>${eq.pts || 0}</strong></td>
-                
+                <td style="font-weight: bold; text-align: center; background-color: #f1f3f5; color: #1e5631;">${posicion}</td>
+                <td style="text-align: left; padding-left: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <img src="${rutaLogo}" alt="${equipo.nombre}" onerror="this.src='logo.png'" style="width: 26px; height: 26px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd;">
+                        <strong>${equipo.nombre}</strong>
+                    </div>
+                </td>
+                <td>${equipo.jj}</td>
+                <td>${equipo.jg}</td>
+                <td>${equipo.jp}</td>
+                <td>${equipo.je}</td>
+                <td>${difTexto}</td>
+                <td><strong>${equipo.pts}</strong></td>
                 <td class="admin-solo">
-                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;" 
-                    onclick="prepararEdicion('${eq.nombre}', ${eq.jg}, ${eq.jp}, ${eq.je || 0}, ${eq.cf}, ${eq.cc})">Editar</button>
+                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer;" onclick="prepararEdicionEquipo('${equipo.nombre}', ${equipo.jj}, ${equipo.jg}, ${equipo.jp}, ${equipo.je}, ${equipo.dif})">Editar</button>
                 </td>
             </tr>`;
-            
             tabla.innerHTML += fila;
         });
-        aplicarModoAdmin();
+
+        if (typeof aplicarModoAdmin === 'function') aplicarModoAdmin();
+
     } catch (error) {
-        console.error("Error cargando equipos:", error);
+        console.error("Error cargando tabla de posiciones:", error);
     }
+}
+
+// Rellena las casillas de arriba al tocar el botón naranja "Editar" de un equipo
+function prepararEdicionEquipo(nombre, jj, jg, jp, je, dif) {
+    document.getElementById('nombre-eq').value = nombre;
+    document.getElementById('jj-eq').value = jj;
+    document.getElementById('jg-eq').value = jg;
+    document.getElementById('jp-eq').value = jp;
+    document.getElementById('je-eq').value = je;
+    document.getElementById('dif-eq').value = dif;
+}
+
+// Botón verde: Sumar al Récord
+async function actualizarEquipo() {
+    const jg = parseInt(document.getElementById('jg-eq').value) || 0;
+    const jp = parseInt(document.getElementById('jp-eq').value) || 0;
+    const je = parseInt(document.getElementById('je-eq').value) || 0;
+    const jjInput = document.getElementById('jj-eq').value;
+    const jj = jjInput !== '' ? parseInt(jjInput) : (jg + jp + je);
+
+    const payload = {
+        nombre: document.getElementById('nombre-eq').value,
+        jj: jj,
+        jg: jg,
+        jp: jp,
+        je: je,
+        dif: parseInt(document.getElementById('dif-eq').value) || 0
+    };
+
+    await fetch('https://liga-esguarnac.onrender.com/api/actualizar_equipo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    cargarEquipos();
+}
+
+// Botón azul: Guardar Edición (Sobrescribir)
+async function guardarEdicionEquipo() {
+    const jg = parseInt(document.getElementById('jg-eq').value) || 0;
+    const jp = parseInt(document.getElementById('jp-eq').value) || 0;
+    const je = parseInt(document.getElementById('je-eq').value) || 0;
+    const jjInput = document.getElementById('jj-eq').value;
+    const jj = jjInput !== '' ? parseInt(jjInput) : (jg + jp + je);
+
+    const payload = {
+        nombre: document.getElementById('nombre-eq').value,
+        jj: jj,
+        jg: jg,
+        jp: jp,
+        je: je,
+        dif: parseInt(document.getElementById('dif-eq').value) || 0
+    };
+
+    await fetch('https://liga-esguarnac.onrender.com/api/editar_equipo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    cargarEquipos();
 }
 
 async function actualizarEquipo() {

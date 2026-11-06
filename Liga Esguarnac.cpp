@@ -485,17 +485,33 @@ svr.Options("/api/equipos", [](const httplib::Request& req, httplib::Response& r
         
         // 2. Buscar el equipo y sumar los nuevos datos a los que ya existen
         for (auto& eq : listaEquipos) {
-            if (eq["nombre"] == nombreBuscado) {
-                eq["jg"] = eq.value("jg", 0) + datosRecibidos.value("jg", 0);
-                eq["jp"] = eq.value("jp", 0) + datosRecibidos.value("jp", 0);
-                eq["je"] = eq.value("je", 0) + datosRecibidos.value("je", 0);
-                eq["cf"] = eq.value("cf", 0) + datosRecibidos.value("cf", 0);
-                eq["cc"] = eq.value("cc", 0) + datosRecibidos.value("cc", 0);
-                
-                eq["pts"] = (eq["jg"].get<int>() * 3) + (eq["je"].get<int>() * 1);
-                
-                break;
-            }
+            // Dentro de svr.Post("/api/actualizar_equipo", ...):
+if (eq["nombre"] == nombreBuscado) {
+    eq["jj"]  = eq.value("jj", 0)  + datosRecibidos.value("jj", 0);
+    eq["jg"]  = eq.value("jg", 0)  + datosRecibidos.value("jg", 0);
+    eq["jp"]  = eq.value("jp", 0)  + datosRecibidos.value("jp", 0);
+    eq["je"]  = eq.value("je", 0)  + datosRecibidos.value("je", 0);
+    eq["dif"] = eq.value("dif", 0) + datosRecibidos.value("dif", 0);
+    
+    // Puntos se mantienen: (JG * 3) + (JE * 1)
+    eq["pts"] = (eq["jg"].get<int>() * 3) + (eq["je"].get<int>() * 1);
+    encontrado = true;
+    break;
+}
+
+// Y dentro de svr.Post("/api/editar_equipo", ...):
+if (eq["nombre"] == nombreBuscado) {
+    eq["jj"]  = datosRecibidos.value("jj", 0);
+    eq["jg"]  = datosRecibidos.value("jg", 0);
+    eq["jp"]  = datosRecibidos.value("jp", 0);
+    eq["je"]  = datosRecibidos.value("je", 0);
+    eq["dif"] = datosRecibidos.value("dif", 0);
+    
+    // Puntos se mantienen: (JG * 3) + (JE * 1)
+    eq["pts"] = (eq["jg"].get<int>() * 3) + (eq["je"].get<int>() * 1);
+    encontrado = true;
+    break;
+}
         }
         
         if (encontrado) {
