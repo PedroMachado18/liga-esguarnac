@@ -547,15 +547,20 @@ async function cargarPitchers() {
         const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/pitchers', { cache: 'no-store' });
         let datos = await respuesta.json();
 
-        // --- EL ESCUDO PROTECTOR ---
-        // Transforma el diccionario de Firebase de vuelta a una lista normal
-        if (datos !== null && !Array.isArray(datos)) {
+        // --- EL ESCUDO DEFINITIVO CONTRA FIREBASE ---
+        if (datos === null) {
+            datos = []; // Si está completamente vacío, creamos lista vacía
+        } else if (Array.isArray(datos)) {
+            // Si es una lista, filtramos y eliminamos los agujeros negros (null)
+            datos = datos.filter(item => item !== null);
+        } else {
+            // Si mutó a un diccionario, lo convertimos a lista
             datos = Object.values(datos);
         }
         
-        // Si la base de datos está totalmente vacía, evitamos errores
-        if (!datos || datos.length === 0) {
-            document.getElementById('tabla-pitchers').innerHTML = '';
+        if (datos.length === 0) {
+            const tabla = document.getElementById('tabla-pitchers');
+            if (tabla) tabla.innerHTML = '';
             return;
         }
 
@@ -565,13 +570,14 @@ async function cargarPitchers() {
             datos = datos.filter(pitcher => pitcher.equipo === equipoSeleccionado);
         }
 
-        // (Opcional) Aquí puedes dejar tu código de ordenamiento si lo tenías
-
         const tabla = document.getElementById('tabla-pitchers');
         if (!tabla) return;
         tabla.innerHTML = '';
 
         datos.forEach(pitcher => {
+            // Doble seguridad: Si se coló un fantasma, lo ignoramos
+            if (!pitcher) return;
+
             // Cálculo matemático seguro de la Efectividad (ERA)
             let eraCalculado = 0.00;
             if (pitcher.ip && parseFloat(pitcher.ip) > 0) {
@@ -994,8 +1000,10 @@ async function guardarEdicion() {
 }
 // Equipo 4. Ejecutar al iniciar
 window.onload = () => {
-    cargarJugadores();
+     cargarJugadores();
     cargarPitchers();
+   
+    
     cargarEquipos();
     cargarResultados();
     aplicarModoAdmin();
