@@ -535,58 +535,60 @@ async function modificarJugador(nombreJugador, equipoJugador) {
 
 
 // Cargar tabla de pitchers
+// Cargar tabla de pitchers
 async function cargarPitchers() {
     try {
-        const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/pitchers');
+        // 1. SOLUCIÓN CACHÉ: Agregamos { cache: 'no-store' }
+        const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/pitchers', { cache: 'no-store' });
         let datos = await respuesta.json();
-        
-        // 1. Leer qué equipo seleccionó el usuario en el Filtro Global de arriba
+
+        // 2. Leer qué equipo seleccionó el usuario
         const equipoSeleccionado = document.getElementById('filtro-equipo') ? document.getElementById('filtro-equipo').value : 'Todos';
-        
-        // 2. Aplicar el filtro a la lista de pitchers
+
+        // 3. Aplicar el filtro de equipo
         if (equipoSeleccionado !== "Todos") {
             datos = datos.filter(pitcher => pitcher.equipo === equipoSeleccionado);
         }
 
-        // 3. Leer el menú de ordenamiento específico de los pitchers
-        const criterioOrdenP = document.getElementById('ordenar-por-p') ? document.getElementById('ordenar-por-p').value : 'defecto';
-        
-        // 4. Aplicar el ordenamiento inteligente
-        if (criterioOrdenP !== 'defecto') {
-            if (criterioOrdenP === 'era') {
-                datos.sort((a, b) => a[criterioOrdenP] - b[criterioOrdenP]); // Menor a mayor
-            } else {
-                datos.sort((a, b) => b[criterioOrdenP] - a[criterioOrdenP]); // Mayor a menor
-            }
-        }
-
-        // 5. Opcional: Limitar a 10 lanzadores si estamos viendo "Todos"
+        // 4. Limitar a 10 lanzadores si estamos viendo "Todos"
         if (equipoSeleccionado === "Todos") {
             datos = datos.slice(0, 10);
         }
-        
+
         const tabla = document.getElementById('tabla-pitchers');
         tabla.innerHTML = '';
-        
+
         datos.forEach(pitcher => {
-  const fila = `<tr>
+            // 5. SOLUCIÓN MATEMÁTICA: Calculamos el ERA aquí mismo
+            // Fórmula estándar: (Carreras Limpias * 9) / Innings Pitcheados
+            // Si los innings son 0 (para evitar dividir por cero), el ERA es 0.00
+            let eraCalculado = 0.00;
+            if (pitcher.ip && pitcher.ip > 0) {
+                eraCalculado = (pitcher.cl * 9) / pitcher.ip;
+            }
+
+            const fila = `<tr>
                 <td>${pitcher.nombre}</td>
                 <td>${pitcher.equipo || '-'}</td>
-                <td>${pitcher.ip}</td>
-                <td>${pitcher.k}</td>
-                <td>${pitcher.cl}</td>
-                <td>${pitcher.cs}</td>
-                <td>${pitcher.g}</td>
-                <td>${pitcher.p}</td>
-                <td><strong>${Number(pitcher.era).toFixed(2)}</strong></td>
-                              
+                <td>${pitcher.ip || 0}</td>
+                <td>${pitcher.k || 0}</td>
+                <td>${pitcher.cl || 0}</td>
+                <td>${pitcher.cs || 0}</td>
+                <td>${pitcher.g || 0}</td>
+                <td>${pitcher.p || 0}</td>
+                <td><strong>${eraCalculado.toFixed(2)}</strong></td>
+                
                 <td class="admin-solo">
-                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer; margin-right: 5px;" onclick="modificarPitcher('${pitcher.nombre}', '${pitcher.equipo}')">Editar</button>
-                    <button style="background-color: #d32f2f; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;" onclick="eliminarPitcher('${pitcher.nombre}', '${pitcher.equipo}')">Borrar</button>
+                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer; margin-right: 5px;" onclick="modificarPitcher('${pitcher.nombre}')">Editar</button>
+                    <button style="background-color: #d32f2f; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;" onclick="eliminarPitcher('${pitcher.nombre}')">Borrar</button>
                 </td>
             </tr>`;
+            
             tabla.innerHTML += fila;
-        });aplicarModoAdmin();
+        });
+        
+        aplicarModoAdmin();
+        
     } catch (error) {
         console.error("Error cargando pitchers:", error);
     }
