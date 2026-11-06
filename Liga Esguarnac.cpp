@@ -154,17 +154,7 @@ int main() {
         res.set_header("Access-Control-Allow-Headers", "Content-Type");
     });
 
-    // 1. Endpoint GET: Enviar todos los jugadores guardados a la web
-    svr.Get("/api/jugadores", [](const httplib::Request& req, httplib::Response& res) {
-        res.set_header("Access-Control-Allow-Origin", "*");
-        json respuesta = baseDeDatos; 
-        res.set_content(respuesta.dump(), "application/json");
-    });
-    // Endpoint GET: Enviar todos los pitchers a la web
-    svr.Get("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
-        res.set_header("Access-Control-Allow-Origin", "*");
-        res.set_content(baseDeDatosPitchers.dump(), "application/json");
-    });
+
 
     // Endpoint POST: Registrar o actualizar pitcher
 svr.Post("/api/registrar_pitcher", [](const httplib::Request& req, httplib::Response& res) {
@@ -698,6 +688,10 @@ svr.Delete("/resultados", [](const httplib::Request& req, httplib::Response& res
 // RUTAS PARA ESTADÍSTICAS DE BATEO
 // ==========================================
 
+// ==========================================
+// RUTAS PARA ESTADÍSTICAS DE BATEO
+// ==========================================
+
 // 1. GET: Leer Bateadores
 svr.Get("/api/bateadores", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
@@ -711,7 +705,7 @@ svr.Get("/api/bateadores", [](const httplib::Request& req, httplib::Response& re
     } else res.status = 500;
 });
 
-// 2. POST: Añadir Bateador
+// 2. POST: Añadir Bateador nuevo
 svr.Post("/api/bateadores", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
@@ -726,7 +720,27 @@ svr.Post("/api/bateadores", [](const httplib::Request& req, httplib::Response& r
     if (fire_put && fire_put->status == 200) res.status = 200; else res.status = 500;
 });
 
-// 3. DELETE: Borrar Bateador
+// 3. PUT: Editar Bateador existente (Botón Naranja)
+svr.Put("/api/bateadores", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    if (req.has_param("id")) {
+        int index = std::stoi(req.get_param_value("id"));
+        httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+        cli.enable_server_certificate_verification(false);
+        auto fire_get = cli.Get("/bateadores.json");
+        if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
+            nlohmann::json lista = nlohmann::json::parse(fire_get->body);
+            if (index >= 0 && index < lista.size()) {
+                lista[index] = nlohmann::json::parse(req.body);
+                cli.Put("/bateadores.json", lista.dump(), "application/json");
+                res.status = 200; return;
+            }
+        }
+    }
+    res.status = 500;
+});
+
+// 4. DELETE: Borrar Bateador (Botón Rojo)
 svr.Delete("/api/bateadores", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     if (req.has_param("id")) {
@@ -746,10 +760,10 @@ svr.Delete("/api/bateadores", [](const httplib::Request& req, httplib::Response&
     res.status = 500;
 });
 
-// 4. OPTIONS: Bateadores
+// 5. OPTIONS: Permisos para Bateadores (Incluye PUT)
 svr.Options("/api/bateadores", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
-    res.set_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+    res.set_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     res.set_header("Access-Control-Allow-Headers", "Content-Type");
     res.status = 200;
 });
@@ -760,26 +774,19 @@ svr.Options("/api/bateadores", [](const httplib::Request& req, httplib::Response
 // ==========================================
 
 // 1. GET: Leer Pitchers
-// 1. GET: Leer Pitchers
 svr.Get("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
-    
-    // ¡ESTA LÍNEA ES VITAL! Si falta, Firebase rechaza la conexión y da el Error 500
     cli.enable_server_certificate_verification(false); 
     
     if (auto fire_res = cli.Get("/pitchers.json")) {
         if (fire_res->status == 200) {
             res.set_content(fire_res->body == "null" ? "[]" : fire_res->body, "application/json");
-        } else {
-            res.status = 500;
-        }
-    } else {
-        res.status = 500;
-    }
+        } else res.status = 500;
+    } else res.status = 500;
 });
 
-// 2. POST: Añadir Pitcher
+// 2. POST: Añadir Pitcher nuevo
 svr.Post("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
@@ -794,7 +801,27 @@ svr.Post("/api/pitchers", [](const httplib::Request& req, httplib::Response& res
     if (fire_put && fire_put->status == 200) res.status = 200; else res.status = 500;
 });
 
-// 3. DELETE: Borrar Pitcher
+// 3. PUT: Editar Pitcher existente (Botón Naranja)
+svr.Put("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    if (req.has_param("id")) {
+        int index = std::stoi(req.get_param_value("id"));
+        httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+        cli.enable_server_certificate_verification(false);
+        auto fire_get = cli.Get("/pitchers.json");
+        if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
+            nlohmann::json lista = nlohmann::json::parse(fire_get->body);
+            if (index >= 0 && index < lista.size()) {
+                lista[index] = nlohmann::json::parse(req.body);
+                cli.Put("/pitchers.json", lista.dump(), "application/json");
+                res.status = 200; return;
+            }
+        }
+    }
+    res.status = 500;
+});
+
+// 4. DELETE: Borrar Pitcher (Botón Rojo)
 svr.Delete("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     if (req.has_param("id")) {
@@ -814,14 +841,13 @@ svr.Delete("/api/pitchers", [](const httplib::Request& req, httplib::Response& r
     res.status = 500;
 });
 
-// 4. OPTIONS: Pitchers
+// 5. OPTIONS: Permisos para Pitchers (Incluye PUT)
 svr.Options("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
-    res.set_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+    res.set_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     res.set_header("Access-Control-Allow-Headers", "Content-Type");
     res.status = 200;
 });
-
 // 4. Ruta OPTIONS obligatoria para navegadores
 svr.Options("/resultados", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
