@@ -466,7 +466,8 @@ async function agregarJugador() {
     }
 
     try {
-        await fetch('https://liga-esguarnac.onrender.com/api/registrar', {
+        // CAMBIO CLAVE: Cambiamos /api/registrar por /api/bateadores
+        await fetch('https://liga-esguarnac.onrender.com/api/bateadores', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -613,7 +614,8 @@ async function agregarPitcher() {
     };
 
     try {
-        const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/registrar_pitcher', {
+        // CAMBIO CLAVE: Cambiamos /api/registrar_pitcher por /api/pitchers
+        const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/pitchers', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
