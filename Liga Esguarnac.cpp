@@ -837,7 +837,7 @@ if (const char* env_p = std::getenv("PORT")) {
 }
 
 std::cout << "Servidor API de Beisbol corriendo en el puerto " << port << "..." << std::endl;
-
+svr.set_base_dir("./.");
 svr.listen("0.0.0.0", port);
 
 return 0;
