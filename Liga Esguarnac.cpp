@@ -712,6 +712,7 @@ auto sumarInningsBeisbol = [](double ip1, double ip2) {
     int nuevosOuts = totalOuts % 3;
     
     return nuevasEntradas + (nuevosOuts * 0.1);
+};
 
 // 2. POST: Añadir Bateador o SUMAR si ya existe en Firebase
 svr.Post("/api/bateadores", [limpiarTexto](const httplib::Request& req, httplib::Response& res) {
@@ -954,4 +955,4 @@ std::cout << "Servidor API de Beisbol corriendo en el puerto " << port << "..." 
 svr.listen("0.0.0.0", port);
 
 return 0;
-} }// <-- Esta llave cierra la funcion int main()
+} // <-- Esta llave cierra la funcion int main()
