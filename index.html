@@ -333,14 +333,14 @@ th.ordenable:hover { background-color: #322a9a; }
             <input type="date" id="fecha-juego" style="padding: 10px; border: 1px solid #ccc; border-radius: 5px;">
             
             <select id="equipo-local">
-                <option value="Equipo 1">Equipo 1 (Local)</option>
-                <option value="Equipo 2">Equipo 2 (Local)</option>
-                <option value="Equipo 3">Equipo 3 (Local)</option>
-                <option value="Equipo 4">Equipo 4 (Local)</option>
-                <option value="Equipo 5">Equipo 5 (Local)</option>
-                <option value="Equipo 6">Equipo 6 (Local)</option>
-                <option value="Equipo 7">Equipo 7 (Local)</option>
-                <option value="Equipo 8">Equipo 8 (Local)</option>
+                <option value="Equipo 1">Equipo 1 (Visitante)</option>
+                <option value="Equipo 2">Equipo 2 (Visitante)</option>
+                <option value="Equipo 3">Equipo 3 (Visitante)</option>
+                <option value="Equipo 4">Equipo 4 (Visitante)</option>
+                <option value="Equipo 5">Equipo 5 (Visitante)</option>
+                <option value="Equipo 6">Equipo 6 (Visitante)</option>
+                <option value="Equipo 7">Equipo 7 (Visitante)</option>
+                <option value="Equipo 8">Equipo 8 (Visitante)</option>
             </select>
             
             <input type="number" id="carreras-local" placeholder="Carreras" min="0" style="width: 100px;">
@@ -350,14 +350,14 @@ th.ordenable:hover { background-color: #322a9a; }
             <input type="number" id="carreras-visitante" placeholder="Carreras" min="0" style="width: 100px;">
             
             <select id="equipo-visitante">
-                <option value="Equipo 1">Equipo 1 (Visitante)</option>
-                <option value="Equipo 2">Equipo 2 (Visitante)</option>
-                <option value="Equipo 3">Equipo 3 (Visitante)</option>
-                <option value="Equipo 4">Equipo 4 (Visitante)</option>
-                <option value="Equipo 5">Equipo 5 (Visitante)</option>
-                <option value="Equipo 6">Equipo 6 (Visitante)</option>
-                <option value="Equipo 7">Equipo 7 (Visitante)</option>
-                <option value="Equipo 8">Equipo 8 (Visitante)</option>
+                <option value="Equipo 1">Equipo 1 (local)</option>
+                <option value="Equipo 2">Equipo 2 (local)</option>
+                <option value="Equipo 3">Equipo 3 (local)</option>
+                <option value="Equipo 4">Equipo 4 (local)</option>
+                <option value="Equipo 5">Equipo 5 (local)</option>
+                <option value="Equipo 6">Equipo 6 (local)</option>
+                <option value="Equipo 7">Equipo 7 (local)</option>
+                <option value="Equipo 8">Equipo 8 (local)</option>
             </select>
             
             <button onclick="guardarResultado()">Subir Resultado</button>
@@ -369,11 +369,11 @@ th.ordenable:hover { background-color: #322a9a; }
             <thead>
                 <tr>
                     <th>Fecha</th>
-                    <th>Equipo Local</th>
+                    <th>Equipo Visitante</th>
                     <th>C</th>
                     <th>VS</th>
                     <th>C</th>
-                    <th>Equipo Visitante</th>
+                    <th>Equipo Local</th>
                     
                 </tr>
             </thead>
@@ -387,71 +387,103 @@ th.ordenable:hover { background-color: #322a9a; }
     
 // Equipo 1. Función para cargar y dibujar la tabla
 // Equipo 1. Función para cargar y dibujar la tabla con filtro
+function ordenarTabla(criterio) {
+    const selectOrden = document.getElementById('ordenar-por');
+    if (selectOrden) {
+        selectOrden.value = criterio;
+        cargarJugadores();
+    }
+}
+
+// 1. CARGAR, FILTRAR Y ORDENAR BATEADORES
 async function cargarJugadores() {
     try {
         const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/bateadores', { cache: 'no-store' });
-        let datos = await respuesta.json();
+        let datosCrudos = await respuesta.json();
         
-        if (datos !== null) {
-            if (!Array.isArray(datos)) {
-                datos = Object.values(datos);
+        let datos = [];
+        if (datosCrudos !== null) {
+            if (Array.isArray(datosCrudos)) {
+                // Guardamos el índice exacto de Firebase (idFirebase) antes de filtrar
+                datosCrudos.forEach((item, idx) => {
+                    if (item !== null && typeof item === 'object') {
+                        datos.push({ ...item, idFirebase: idx });
+                    }
+                });
+            } else {
+                Object.entries(datosCrudos).forEach(([key, item]) => {
+                    if (item !== null && typeof item === 'object') {
+                        datos.push({ ...item, idFirebase: key });
+                    }
+                });
             }
-            datos = datos.filter(item => item !== null && typeof item === 'object');
-        } else {
-            datos = [];
         }
 
-        // --- FILTRO GLOBAL DE EQUIPOS PARA BATEADORES ---
-        const equipoSeleccionado = document.getElementById('filtro-equipo') ? document.getElementById('filtro-equipo').value : 'Todos';
+        // Pre-calculamos AVG y SLG para poder ordenar por ellos
+        datos.forEach(jugador => {
+            jugador.tb = parseInt(jugador.tb) || 0;
+            jugador.h = parseInt(jugador.h) || 0;
+            jugador.d2b = parseInt(jugador.d2b) || 0;
+            jugador.d3b = parseInt(jugador.d3b) || 0;
+            jugador.hr = parseInt(jugador.hr) || 0;
+            jugador.bb = parseInt(jugador.bb) || 0;
+            jugador.ci = parseInt(jugador.ci) || 0;
+            jugador.ca = parseInt(jugador.ca) || 0;
+            jugador.k = parseInt(jugador.k) || 0;
+
+            jugador.avg = 0.000;
+            jugador.slg = 0.000;
+            if (jugador.tb > 0) {
+                jugador.avg = jugador.h / jugador.tb;
+                let sencillos = jugador.h - jugador.d2b - jugador.d3b - jugador.hr;
+                let basesTotales = sencillos + (jugador.d2b * 2) + (jugador.d3b * 3) + (jugador.hr * 4);
+                jugador.slg = basesTotales / jugador.tb;
+            }
+        });
+
+        // 1. Filtro Global por Equipo
+        const selectFiltro = document.getElementById('filtro-equipo');
+        const equipoSeleccionado = selectFiltro ? selectFiltro.value : 'Todos';
         if (equipoSeleccionado !== "Todos") {
-            datos = datos.filter(jugador => jugador.equipo === equipoSeleccionado);
+            datos = datos.filter(j => (j.equipo || '').trim() === equipoSeleccionado.trim());
         }
 
-        const tabla = document.getElementById('tabla-jugadores'); 
+        // 2. Ordenar Bateadores
+        const selectOrden = document.getElementById('ordenar-por');
+        const criterioOrden = selectOrden ? selectOrden.value : 'defecto';
+        if (criterioOrden !== 'defecto') {
+            datos.sort((a, b) => (parseFloat(b[criterioOrden]) || 0) - (parseFloat(a[criterioOrden]) || 0));
+        }
+
+        const tabla = document.getElementById('tabla-jugadores');
         if (!tabla) return;
         tabla.innerHTML = '';
 
         datos.forEach(jugador => {
-            let tb = jugador.tb || 0;
-            let h = jugador.h || 0;
-            let d2b = jugador.d2b || 0;
-            let d3b = jugador.d3b || 0;
-            let hr = jugador.hr || 0;
-
-            let avg = 0.000;
-            let slg = 0.000;
-
-            if (tb > 0) {
-                avg = h / tb;
-                let sencillos = h - d2b - d3b - hr; 
-                let basesTotales = sencillos + (d2b * 2) + (d3b * 3) + (hr * 4);
-                slg = basesTotales / tb;
-            }
-
             const fila = `<tr>
                 <td>${jugador.nombre || 'Sin nombre'}</td>
                 <td>${jugador.equipo || '-'}</td>
-                <td>${tb}</td>
-                <td>${h}</td>
-                <td>${d2b}</td>
-                <td>${d3b}</td>
-                <td>${hr}</td>
-                <td>${jugador.bb || 0}</td>
-                <td>${jugador.ci || 0}</td>
-                <td>${jugador.ca || 0}</td>
-                <td>${jugador.k || 0}</td>
-                <td><strong>${avg.toFixed(3)}</strong></td>
-                <td><strong>${slg.toFixed(3)}</strong></td>
+                <td>${jugador.tb}</td>
+                <td>${jugador.h}</td>
+                <td>${jugador.d2b}</td>
+                <td>${jugador.d3b}</td>
+                <td>${jugador.hr}</td>
+                <td>${jugador.bb}</td>
+                <td>${jugador.ci}</td>
+                <td>${jugador.ca}</td>
+                <td>${jugador.k}</td>
+                <td><strong>${jugador.avg.toFixed(3)}</strong></td>
+                <td><strong>${jugador.slg.toFixed(3)}</strong></td>
                 <td class="admin-solo">
-                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer; margin-right: 5px;" onclick="modificarJugador('${jugador.nombre}')">Editar</button>
-                    <button style="background-color: #d32f2f; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;" onclick="eliminarJugador('${jugador.nombre}')">Borrar</button>
+                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer; margin-right: 5px;" onclick="modificarJugador(${jugador.idFirebase}, '${jugador.nombre}', '${jugador.equipo}')">Editar</button>
+                    <button style="background-color: #d32f2f; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer;" onclick="eliminarJugador(${jugador.idFirebase}, '${jugador.nombre}')">Borrar</button>
                 </td>
             </tr>`;
             tabla.innerHTML += fila;
         });
-        
+
         if (typeof aplicarModoAdmin === 'function') aplicarModoAdmin();
-        
+
     } catch (error) {
         console.error("Error cargando bateadores:", error);
     }
@@ -494,25 +526,36 @@ async function agregarJugador() {
 }
 
 // Equipo 3. Función independiente para eliminar
-async function eliminarJugador(nombreJugador, equipoJugador) {
-    if (!confirm(`¿Estás seguro de eliminar a ${nombreJugador} del equipo ${equipoJugador}?`)) return;
+async function eliminarJugador(idFirebase, nombreJugador) {
+    if (!confirm(`¿Estás seguro de eliminar este registro de ${nombreJugador}?`)) return;
 
     try {
-        await fetch('https://liga-esguarnac.onrender.com/api/eliminar', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nombre: nombreJugador, equipo: equipoJugador })
+        const respuesta = await fetch(`https://liga-esguarnac.onrender.com/api/bateadores?id=${idFirebase}`, {
+            method: 'DELETE'
         });
-        await cargarJugadores();
-    } catch(error) {
+        if (respuesta.ok) {
+            await cargarJugadores();
+        } else {
+            alert("No se pudo eliminar el bateador en el servidor.");
+        }
+    } catch (error) {
         console.error("Error al eliminar:", error);
     }
 }
-async function modificarJugador(nombreJugador, equipoJugador) {
-    // Toma los nuevos números directamente desde las casillas del formulario
+async function modificarJugador(idFirebase, nombreJugador, equipoJugador) {
+    const tbInput = document.getElementById('tb').value;
+    const hInput = document.getElementById('h').value;
+
+    if (tbInput === '' && hInput === '') {
+        document.getElementById('nombre').value = nombreJugador;
+        document.getElementById('equipo').value = equipoJugador;
+        alert(`Escribe los nuevos números de ${nombreJugador} en las casillas de arriba y vuelve a presionar su botón naranja "Editar".`);
+        return;
+    }
+
     const payload = {
-        nombre: nombreJugador,
-        equipo: equipoJugador,
+        nombre: document.getElementById('nombre').value || nombreJugador,
+        equipo: document.getElementById('equipo').value || equipoJugador,
         tb: parseInt(document.getElementById('tb').value) || 0,
         h: parseInt(document.getElementById('h').value) || 0,
         d2b: parseInt(document.getElementById('d2b').value) || 0,
@@ -525,18 +568,20 @@ async function modificarJugador(nombreJugador, equipoJugador) {
     };
 
     try {
-        await fetch('https://liga-esguarnac.onrender.com/api/modificar', {
+        const respuesta = await fetch(`https://liga-esguarnac.onrender.com/api/bateadores?id=${idFirebase}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        // Limpiar formulario y refrescar la tabla automáticamente
-        const inputs = document.querySelectorAll('input[type="number"], input[type="text"]');
-        inputs.forEach(input => input.value = '');
-        await cargarJugadores();
-        
-    } catch(error) {
+        if (respuesta.ok) {
+            const inputs = document.querySelectorAll('#equipos input[type="number"], #equipos input[type="text"]');
+            inputs.forEach(input => input.value = '');
+            await cargarJugadores();
+        } else {
+            alert("Asegúrate de actualizar el código C++ con la ruta PUT /api/bateadores.");
+        }
+    } catch (error) {
         console.error("Error al modificar:", error);
     }
 }
@@ -551,29 +596,29 @@ async function modificarJugador(nombreJugador, equipoJugador) {
 async function cargarPitchers() {
     try {
         const respuesta = await fetch('https://liga-esguarnac.onrender.com/api/pitchers', { cache: 'no-store' });
-        let datos = await respuesta.json();
+        let datosCrudos = await respuesta.json();
 
-        // --- EL ESCUDO DEFINITIVO CONTRA FIREBASE ---
-        if (datos === null) {
-            datos = []; // Si está completamente vacío, creamos lista vacía
-        } else if (Array.isArray(datos)) {
-            // Si es una lista, filtramos y eliminamos los agujeros negros (null)
-            datos = datos.filter(item => item !== null);
-        } else {
-            // Si mutó a un diccionario, lo convertimos a lista
-            datos = Object.values(datos);
-        }
-        
-        if (datos.length === 0) {
-            const tabla = document.getElementById('tabla-pitchers');
-            if (tabla) tabla.innerHTML = '';
-            return;
+        let datos = [];
+        if (datosCrudos !== null) {
+            if (Array.isArray(datosCrudos)) {
+                datosCrudos.forEach((item, idx) => {
+                    if (item !== null && typeof item === 'object') {
+                        datos.push({ ...item, idFirebase: idx });
+                    }
+                });
+            } else {
+                Object.entries(datosCrudos).forEach(([key, item]) => {
+                    if (item !== null && typeof item === 'object') {
+                        datos.push({ ...item, idFirebase: key });
+                    }
+                });
+            }
         }
 
-        // 1. Filtro Global de Equipos
-        const equipoSeleccionado = document.getElementById('filtro-equipo') ? document.getElementById('filtro-equipo').value : 'Todos';
+        const selectFiltro = document.getElementById('filtro-equipo');
+        const equipoSeleccionado = selectFiltro ? selectFiltro.value : 'Todos';
         if (equipoSeleccionado !== "Todos") {
-            datos = datos.filter(pitcher => pitcher.equipo === equipoSeleccionado);
+            datos = datos.filter(p => (p.equipo || '').trim() === equipoSeleccionado.trim());
         }
 
         const tabla = document.getElementById('tabla-pitchers');
@@ -581,17 +626,13 @@ async function cargarPitchers() {
         tabla.innerHTML = '';
 
         datos.forEach(pitcher => {
-            // Doble seguridad: Si se coló un fantasma, lo ignoramos
-            if (!pitcher) return;
-
-            // Cálculo matemático seguro de la Efectividad (ERA)
             let eraCalculado = 0.00;
             if (pitcher.ip && parseFloat(pitcher.ip) > 0) {
                 eraCalculado = (parseInt(pitcher.cl || 0) * 9) / parseFloat(pitcher.ip);
             }
 
             const fila = `<tr>
-                <td>${pitcher.nombre}</td>
+                <td>${pitcher.nombre || 'Sin nombre'}</td>
                 <td>${pitcher.equipo || '-'}</td>
                 <td>${pitcher.ip || 0}</td>
                 <td>${pitcher.k || 0}</td>
@@ -600,18 +641,16 @@ async function cargarPitchers() {
                 <td>${pitcher.g || 0}</td>
                 <td>${pitcher.p || 0}</td>
                 <td><strong>${eraCalculado.toFixed(2)}</strong></td>
-                
                 <td class="admin-solo">
-                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer; margin-right: 5px;" onclick="modificarPitcher('${pitcher.nombre}')">Editar</button>
-                    <button style="background-color: #d32f2f; color: white; border: none; padding: 5px; border-radius: 3px; cursor: pointer;" onclick="eliminarPitcher('${pitcher.nombre}')">Borrar</button>
+                    <button style="background-color: #ff9800; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer; margin-right: 5px;" onclick="modificarPitcher(${pitcher.idFirebase}, '${pitcher.nombre}', '${pitcher.equipo}')">Editar</button>
+                    <button style="background-color: #d32f2f; color: white; border: none; padding: 5px 8px; border-radius: 3px; cursor: pointer;" onclick="eliminarPitcher(${pitcher.idFirebase}, '${pitcher.nombre}')">Borrar</button>
                 </td>
             </tr>`;
-            
             tabla.innerHTML += fila;
         });
-        
+
         if (typeof aplicarModoAdmin === 'function') aplicarModoAdmin();
-        
+
     } catch (error) {
         console.error("Error cargando pitchers:", error);
     }
@@ -664,25 +703,34 @@ async function agregarPitcher() {
         alert("Asegúrate de que el servidor C++ esté encendido.");
     }
 }
-async function eliminarPitcher(nombrePitcher, equipoPitcher) {
-    if (!confirm(`¿Estás seguro de eliminar a ${nombrePitcher} del equipo ${equipoPitcher}?`)) return;
+async function eliminarPitcher(idFirebase, nombrePitcher) {
+    if (!confirm(`¿Estás seguro de eliminar a ${nombrePitcher}?`)) return;
 
     try {
-        await fetch('https://liga-esguarnac.onrender.com/api/eliminar_pitcher', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nombre: nombrePitcher, equipo: equipoPitcher })
+        const respuesta = await fetch(`https://liga-esguarnac.onrender.com/api/pitchers?id=${idFirebase}`, {
+            method: 'DELETE'
         });
-        await cargarPitchers();
-    } catch(error) {
+        if (respuesta.ok) {
+            await cargarPitchers();
+        }
+    } catch (error) {
         console.error("Error al eliminar pitcher:", error);
     }
 }
 
-async function modificarPitcher(nombrePitcher, equipoPitcher) {
+// 6. EDITAR PITCHER EN FIREBASE
+async function modificarPitcher(idFirebase, nombrePitcher, equipoPitcher) {
+    const ipInput = document.getElementById('ip').value;
+    if (ipInput === '') {
+        document.getElementById('nombre-p').value = nombrePitcher;
+        document.getElementById('equipo-p').value = equipoPitcher;
+        alert(`Escribe los nuevos números de ${nombrePitcher} en el formulario de pitchers y vuelve a presionar "Editar".`);
+        return;
+    }
+
     const payload = {
-        nombre: nombrePitcher,
-        equipo: equipoPitcher,
+        nombre: document.getElementById('nombre-p').value || nombrePitcher,
+        equipo: document.getElementById('equipo-p').value || equipoPitcher,
         ip: parseFloat(document.getElementById('ip').value) || 0,
         k: parseInt(document.getElementById('k-p').value) || 0,
         cl: parseInt(document.getElementById('cl').value) || 0,
@@ -692,22 +740,23 @@ async function modificarPitcher(nombrePitcher, equipoPitcher) {
     };
 
     try {
-        await fetch('https://liga-esguarnac.onrender.com/api/modificar_pitcher', {
+        const respuesta = await fetch(`https://liga-esguarnac.onrender.com/api/pitchers?id=${idFirebase}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
-        document.getElementById('nombre-p').value = '';
-        document.getElementById('ip').value = '';
-        document.getElementById('k-p').value = '';
-        document.getElementById('cl').value = '';
-        document.getElementById('cs').value = '';
-        document.getElementById('g').value = '';
-        document.getElementById('p').value = '';
-        
-        await cargarPitchers();
-    } catch(error) {
+        if (respuesta.ok) {
+            document.getElementById('nombre-p').value = '';
+            document.getElementById('ip').value = '';
+            document.getElementById('k-p').value = '';
+            document.getElementById('cl').value = '';
+            document.getElementById('cs').value = '';
+            document.getElementById('g').value = '';
+            document.getElementById('p').value = '';
+            await cargarPitchers();
+        }
+    } catch (error) {
         console.error("Error al modificar pitcher:", error);
     }
 }
