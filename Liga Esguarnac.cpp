@@ -829,19 +829,7 @@ svr.Get("/api/pitchers", [](const httplib::Request& req, httplib::Response& res)
 // 2. POST: Añadir Pitcher nuevo
 // 2. POST: Añadir Pitcher o SUMAR si ya existe en Firebase
 // Convierte los decimales (.1 y .2) en outs reales, los suma y los devuelve en formato béisbol
-auto sumarInningsBeisbol = [](double ip1, double ip2) {
-    int ent1 = static_cast<int>(ip1);
-    int outs1 = static_cast<int>(std::round((ip1 - ent1) * 10));
-    
-    int ent2 = static_cast<int>(ip2);
-    int outs2 = static_cast<int>(std::round((ip2 - ent2) * 10));
-    
-    int totalOuts = (ent1 * 3 + outs1) + (ent2 * 3 + outs2);
-    int nuevasEntradas = totalOuts / 3;
-    int nuevosOuts = totalOuts % 3;
-    
-    return nuevasEntradas + (nuevosOuts * 0.1);
-};
+
 
 // 2. POST: Añadir Pitcher o SUMAR con formato de béisbol si ya existe
 svr.Post("/api/pitchers", [limpiarTexto, sumarInningsBeisbol](const httplib::Request& req, httplib::Response& res) {
