@@ -690,7 +690,31 @@ svr.Get("/api/bateadores", [](const httplib::Request& req, httplib::Response& re
 });
 
 // 2. POST: Añadir Bateador nuevo
-svr.Post("/api/bateadores", [](const httplib::Request& req, httplib::Response& res) {
+// Función auxiliar para comparar nombres ignorando mayúsculas/minúsculas y espacios extra
+auto limpiarTexto = [](std::string str) {
+    std::string limpio = "";
+    for (char c : str) {
+        if (!std::isspace(static_cast<unsigned char>(c))) {
+            limpio += std::tolower(static_cast<unsigned char>(c));
+        }
+    }
+    return limpio;
+};
+auto sumarInningsBeisbol = [](double ip1, double ip2) {
+    int ent1 = static_cast<int>(ip1);
+    int outs1 = static_cast<int>(std::round((ip1 - ent1) * 10));
+    
+    int ent2 = static_cast<int>(ip2);
+    int outs2 = static_cast<int>(std::round((ip2 - ent2) * 10));
+    
+    int totalOuts = (ent1 * 3 + outs1) + (ent2 * 3 + outs2);
+    int nuevasEntradas = totalOuts / 3;
+    int nuevosOuts = totalOuts % 3;
+    
+    return nuevasEntradas + (nuevosOuts * 0.1);
+
+// 2. POST: Añadir Bateador o SUMAR si ya existe en Firebase
+svr.Post("/api/bateadores", [limpiarTexto](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
     cli.enable_server_certificate_verification(false);
@@ -706,7 +730,33 @@ svr.Post("/api/bateadores", [](const httplib::Request& req, httplib::Response& r
         }
     }
     
-    lista.push_back(nlohmann::json::parse(req.body));
+    nlohmann::json nuevo = nlohmann::json::parse(req.body);
+    std::string nombreNuevo = limpiarTexto(nuevo.value("nombre", ""));
+    std::string equipoNuevo = limpiarTexto(nuevo.value("equipo", ""));
+    bool encontrado = false;
+
+    for (auto& jug : lista) {
+        if (limpiarTexto(jug.value("nombre", "")) == nombreNuevo &&
+            limpiarTexto(jug.value("equipo", "")) == equipoNuevo) {
+            
+            jug["tb"]  = jug.value("tb", 0)  + nuevo.value("tb", 0);
+            jug["h"]   = jug.value("h", 0)   + nuevo.value("h", 0);
+            jug["d2b"] = jug.value("d2b", 0) + nuevo.value("d2b", 0);
+            jug["d3b"] = jug.value("d3b", 0) + nuevo.value("d3b", 0);
+            jug["hr"]  = jug.value("hr", 0)  + nuevo.value("hr", 0);
+            jug["bb"]  = jug.value("bb", 0)  + nuevo.value("bb", 0);
+            jug["ci"]  = jug.value("ci", 0)  + nuevo.value("ci", 0);
+            jug["ca"]  = jug.value("ca", 0)  + nuevo.value("ca", 0);
+            jug["k"]   = jug.value("k", 0)   + nuevo.value("k", 0);
+            
+            encontrado = true;
+            break;
+        }
+    }
+
+    if (!encontrado) {
+        lista.push_back(nuevo);
+    }
     
     auto fire_put = cli.Put("/bateadores.json", lista.dump(), "application/json");
     if (fire_put && fire_put->status == 200) {
@@ -776,7 +826,24 @@ svr.Get("/api/pitchers", [](const httplib::Request& req, httplib::Response& res)
 });
 
 // 2. POST: Añadir Pitcher nuevo
-svr.Post("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
+// 2. POST: Añadir Pitcher o SUMAR si ya existe en Firebase
+// Convierte los decimales (.1 y .2) en outs reales, los suma y los devuelve en formato béisbol
+auto sumarInningsBeisbol = [](double ip1, double ip2) {
+    int ent1 = static_cast<int>(ip1);
+    int outs1 = static_cast<int>(std::round((ip1 - ent1) * 10));
+    
+    int ent2 = static_cast<int>(ip2);
+    int outs2 = static_cast<int>(std::round((ip2 - ent2) * 10));
+    
+    int totalOuts = (ent1 * 3 + outs1) + (ent2 * 3 + outs2);
+    int nuevasEntradas = totalOuts / 3;
+    int nuevosOuts = totalOuts % 3;
+    
+    return nuevasEntradas + (nuevosOuts * 0.1);
+};
+
+// 2. POST: Añadir Pitcher o SUMAR con formato de béisbol si ya existe
+svr.Post("/api/pitchers", [limpiarTexto, sumarInningsBeisbol](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
     httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
     cli.enable_server_certificate_verification(false);
@@ -792,7 +859,33 @@ svr.Post("/api/pitchers", [](const httplib::Request& req, httplib::Response& res
         }
     }
     
-    lista.push_back(nlohmann::json::parse(req.body));
+    nlohmann::json nuevo = nlohmann::json::parse(req.body);
+    // Normalizamos también si alguien ingresa .3 por error al registrar un pitcher nuevo
+    nuevo["ip"] = sumarInningsBeisbol(nuevo.value("ip", 0.0), 0.0);
+
+    std::string nombreNuevo = limpiarTexto(nuevo.value("nombre", ""));
+    std::string equipoNuevo = limpiarTexto(nuevo.value("equipo", ""));
+    bool encontrado = false;
+
+    for (auto& pit : lista) {
+        if (limpiarTexto(pit.value("nombre", "")) == nombreNuevo &&
+            limpiarTexto(pit.value("equipo", "")) == equipoNuevo) {
+            
+            pit["ip"] = sumarInningsBeisbol(pit.value("ip", 0.0), nuevo.value("ip", 0.0));
+            pit["k"]  = pit.value("k", 0)  + nuevo.value("k", 0);
+            pit["cl"] = pit.value("cl", 0) + nuevo.value("cl", 0);
+            pit["cs"] = pit.value("cs", 0) + nuevo.value("cs", 0);
+            pit["g"]  = pit.value("g", 0)  + nuevo.value("g", 0);
+            pit["p"]  = pit.value("p", 0)  + nuevo.value("p", 0);
+            
+            encontrado = true;
+            break;
+        }
+    }
+
+    if (!encontrado) {
+        lista.push_back(nuevo);
+    }
     
     auto fire_put = cli.Put("/pitchers.json", lista.dump(), "application/json");
     if (fire_put && fire_put->status == 200) {

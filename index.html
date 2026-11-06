@@ -640,17 +640,29 @@ async function cargarPitchers() {
         }
 
         // Pre-calculamos los números y el ERA antes de ordenar
+// Pre-calculamos los números, outs reales y el ERA exacto antes de ordenar
         datos.forEach(pitcher => {
-            pitcher.ip = parseFloat(pitcher.ip) || 0;
+            let ipCrudo = parseFloat(pitcher.ip) || 0;
+            let entradasEnteras = Math.floor(ipCrudo);
+            let outsSueltos = Math.round((ipCrudo - entradasEnteras) * 10);
+            
+            // Por si hay algún dato antiguo con .3 o más, lo convertimos a entradas reales
+            entradasEnteras += Math.floor(outsSueltos / 3);
+            outsSueltos = outsSueltos % 3;
+
+            pitcher.ip = parseFloat(`${entradasEnteras}.${outsSueltos}`);
+            pitcher.outsTotales = (entradasEnteras * 3) + outsSueltos;
+
             pitcher.k  = parseInt(pitcher.k) || 0;
             pitcher.cl = parseInt(pitcher.cl) || 0;
             pitcher.cs = parseInt(pitcher.cs) || 0;
             pitcher.g  = parseInt(pitcher.g) || 0;
             pitcher.p  = parseInt(pitcher.p) || 0;
 
+            // ERA oficial = (Carreras Limpias * 27 outs) / Outs Totales lanzados
             pitcher.era = 0.00;
-            if (pitcher.ip > 0) {
-                pitcher.era = (pitcher.cl * 9.0) / pitcher.ip;
+            if (pitcher.outsTotales > 0) {
+                pitcher.era = (pitcher.cl * 27.0) / pitcher.outsTotales;
             }
         });
 
