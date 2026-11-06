@@ -694,6 +694,127 @@ svr.Delete("/resultados", [](const httplib::Request& req, httplib::Response& res
     }
 });
 
+// ==========================================
+// RUTAS PARA ESTADÍSTICAS DE BATEO
+// ==========================================
+
+// 1. GET: Leer Bateadores
+svr.Get("/api/bateadores", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+    cli.enable_server_certificate_verification(false);
+    
+    if (auto fire_res = cli.Get("/bateadores.json")) {
+        if (fire_res->status == 200) {
+            res.set_content(fire_res->body == "null" ? "[]" : fire_res->body, "application/json");
+        } else res.status = 500;
+    } else res.status = 500;
+});
+
+// 2. POST: Añadir Bateador
+svr.Post("/api/bateadores", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+    cli.enable_server_certificate_verification(false);
+    
+    auto fire_get = cli.Get("/bateadores.json");
+    nlohmann::json lista = (fire_get && fire_get->status == 200 && fire_get->body != "null") ? nlohmann::json::parse(fire_get->body) : nlohmann::json::array();
+    
+    lista.push_back(nlohmann::json::parse(req.body));
+    
+    auto fire_put = cli.Put("/bateadores.json", lista.dump(), "application/json");
+    if (fire_put && fire_put->status == 200) res.status = 200; else res.status = 500;
+});
+
+// 3. DELETE: Borrar Bateador
+svr.Delete("/api/bateadores", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    if (req.has_param("id")) {
+        int index = std::stoi(req.get_param_value("id"));
+        httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+        cli.enable_server_certificate_verification(false);
+        auto fire_get = cli.Get("/bateadores.json");
+        if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
+            nlohmann::json lista = nlohmann::json::parse(fire_get->body);
+            if (index >= 0 && index < lista.size()) {
+                lista.erase(index);
+                cli.Put("/bateadores.json", lista.dump(), "application/json");
+                res.status = 200; return;
+            }
+        }
+    }
+    res.status = 500;
+});
+
+// 4. OPTIONS: Bateadores
+svr.Options("/api/bateadores", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    res.set_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+    res.set_header("Access-Control-Allow-Headers", "Content-Type");
+    res.status = 200;
+});
+
+
+// ==========================================
+// RUTAS PARA ESTADÍSTICAS DE PITCHERS
+// ==========================================
+
+// 1. GET: Leer Pitchers
+svr.Get("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+    cli.enable_server_certificate_verification(false);
+    
+    if (auto fire_res = cli.Get("/pitchers.json")) {
+        if (fire_res->status == 200) {
+            res.set_content(fire_res->body == "null" ? "[]" : fire_res->body, "application/json");
+        } else res.status = 500;
+    } else res.status = 500;
+});
+
+// 2. POST: Añadir Pitcher
+svr.Post("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+    cli.enable_server_certificate_verification(false);
+    
+    auto fire_get = cli.Get("/pitchers.json");
+    nlohmann::json lista = (fire_get && fire_get->status == 200 && fire_get->body != "null") ? nlohmann::json::parse(fire_get->body) : nlohmann::json::array();
+    
+    lista.push_back(nlohmann::json::parse(req.body));
+    
+    auto fire_put = cli.Put("/pitchers.json", lista.dump(), "application/json");
+    if (fire_put && fire_put->status == 200) res.status = 200; else res.status = 500;
+});
+
+// 3. DELETE: Borrar Pitcher
+svr.Delete("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    if (req.has_param("id")) {
+        int index = std::stoi(req.get_param_value("id"));
+        httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
+        cli.enable_server_certificate_verification(false);
+        auto fire_get = cli.Get("/pitchers.json");
+        if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
+            nlohmann::json lista = nlohmann::json::parse(fire_get->body);
+            if (index >= 0 && index < lista.size()) {
+                lista.erase(index);
+                cli.Put("/pitchers.json", lista.dump(), "application/json");
+                res.status = 200; return;
+            }
+        }
+    }
+    res.status = 500;
+});
+
+// 4. OPTIONS: Pitchers
+svr.Options("/api/pitchers", [](const httplib::Request& req, httplib::Response& res) {
+    res.set_header("Access-Control-Allow-Origin", "*");
+    res.set_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+    res.set_header("Access-Control-Allow-Headers", "Content-Type");
+    res.status = 200;
+});
+
 // 4. Ruta OPTIONS obligatoria para navegadores
 svr.Options("/resultados", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
