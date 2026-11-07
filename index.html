@@ -839,8 +839,8 @@ async function modificarPitcher(idFirebase, nombrePitcher, equipoPitcher) {
 // Diccionario con las imágenes de cada equipo (sube tus imágenes a tu carpeta de GitHub con estos nombres)
 const logosEquipos = {
     "Bandoleros": "bandoleros.png",
-    "Warriors N": "warriors_n.png",
-    "Warriors B": "warriors_b.png",
+    "Warriors N": "warrios_n.png",
+    "Warriors B": "warrios_b.png",
     "Elite": "elite.png",
     "Torno Miranda": "torno_miranda.png",
     "Hidroponias": "hidroponias.png",
@@ -937,83 +937,71 @@ function prepararEdicionEquipo(nombre, jj, jg, jp, je, dif) {
 }
 
 // Botón verde: Sumar al Récord
-async function actualizarEquipo() {
-    const jg = parseInt(document.getElementById('jg-eq').value) || 0;
-    const jp = parseInt(document.getElementById('jp-eq').value) || 0;
-    const je = parseInt(document.getElementById('je-eq').value) || 0;
-    const jjInput = document.getElementById('jj-eq').value;
-    const jj = jjInput !== '' ? parseInt(jjInput) : (jg + jp + je);
+// Lee las casillas del formulario de la Tabla de Posiciones sin importar qué ID tengan
+function obtenerInputsEquipos() {
+    const btn = document.querySelector('button[onclick*="actualizarEquipo"]');
+    const contenedor = btn ? btn.parentElement : document;
+    const select = contenedor.querySelector('select');
+    const inputs = contenedor.querySelectorAll('input[type="number"]');
+    return { select, inputs };
+}
 
-    const payload = {
-        nombre: document.getElementById('nombre-eq').value,
-        jj: jj,
-        jg: jg,
-        jp: jp,
-        je: je,
-        dif: parseInt(document.getElementById('dif-eq').value) || 0
-    };
+function prepararEdicionEquipo(nombre, jj, jg, jp, je, dif) {
+    const { select, inputs } = obtenerInputsEquipos();
+    if (select) select.value = nombre;
+    if (inputs.length >= 5) {
+        inputs[0].value = jj;
+        inputs[1].value = jg;
+        inputs[2].value = jp;
+        inputs[3].value = je;
+        inputs[4].value = dif;
+    }
+}
+
+async function actualizarEquipo() {
+    const { select, inputs } = obtenerInputsEquipos();
+    if (!select || inputs.length < 5) return;
+
+    const jjVal = inputs[0].value;
+    const jg = parseInt(inputs[1].value) || 0;
+    const jp = parseInt(inputs[2].value) || 0;
+    const je = parseInt(inputs[3].value) || 0;
+    const dif = parseInt(inputs[4].value) || 0;
+    const jj = jjVal !== '' ? (parseInt(jjVal) || 0) : (jg + jp + je);
+
+    const payload = { nombre: select.value, jj, jg, jp, je, dif };
 
     await fetch('https://liga-esguarnac.onrender.com/api/actualizar_equipo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
-    cargarEquipos();
+
+    inputs.forEach(input => input.value = '');
+    await cargarEquipos();
 }
 
-// Botón azul: Guardar Edición (Sobrescribir)
 async function guardarEdicionEquipo() {
-    const jg = parseInt(document.getElementById('jg-eq').value) || 0;
-    const jp = parseInt(document.getElementById('jp-eq').value) || 0;
-    const je = parseInt(document.getElementById('je-eq').value) || 0;
-    const jjInput = document.getElementById('jj-eq').value;
-    const jj = jjInput !== '' ? parseInt(jjInput) : (jg + jp + je);
+    const { select, inputs } = obtenerInputsEquipos();
+    if (!select || inputs.length < 5) return;
 
-    const payload = {
-        nombre: document.getElementById('nombre-eq').value,
-        jj: jj,
-        jg: jg,
-        jp: jp,
-        je: je,
-        dif: parseInt(document.getElementById('dif-eq').value) || 0
-    };
+    const jjVal = inputs[0].value;
+    const jg = parseInt(inputs[1].value) || 0;
+    const jp = parseInt(inputs[2].value) || 0;
+    const je = parseInt(inputs[3].value) || 0;
+    const dif = parseInt(inputs[4].value) || 0;
+    const jj = jjVal !== '' ? (parseInt(jjVal) || 0) : (jg + jp + je);
+
+    const payload = { nombre: select.value, jj, jg, jp, je, dif };
 
     await fetch('https://liga-esguarnac.onrender.com/api/editar_equipo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
-    cargarEquipos();
-}
 
-async function actualizarEquipo() {
-    const payload = {
-        nombre: document.getElementById('nombre-equipo').value,
-        jg: parseInt(document.getElementById('eq-jg').value) || 0,
-        jp: parseInt(document.getElementById('eq-jp').value) || 0,
-        je: parseInt(document.getElementById('eq-je').value) || 0,
-        cf: parseInt(document.getElementById('eq-cf').value) || 0,
-        cc: parseInt(document.getElementById('eq-cc').value) || 0
-    };
-
-    try {
-        await fetch('https://liga-esguarnac.onrender.com/api/actualizar_equipo', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        // Limpiar formulario de equipos
-        document.getElementById('eq-jg').value = '';
-        document.getElementById('eq-jp').value = '';
-        document.getElementById('eq-je').value = '';
-        document.getElementById('eq-cf').value = '';
-        document.getElementById('eq-cc').value = '';
-        
-        await cargarEquipos();
-    } catch(error) {
-        console.error("Error al actualizar equipo:", error);
-    }
+    inputs.forEach(input => input.value = '');
+    await cargarEquipos();
 }
 async function modificarEquipo(nombreEquipo) {
     const payload = {
