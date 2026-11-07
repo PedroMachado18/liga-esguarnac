@@ -481,6 +481,10 @@ async function cargarJugadores() {
             datos.sort((a, b) => (parseFloat(b[criterioOrden]) || 0) - (parseFloat(a[criterioOrden]) || 0));
         }
 
+            const selectFiltroGlobal = document.getElementById('filtro-equipo'); // o el ID de tu selector global
+if (selectFiltroGlobal && selectFiltroGlobal.value === 'Todos los equipos') {
+    datos = datos.slice(0, 5);
+}
         const tabla = document.getElementById('tabla-jugadores');
         if (!tabla) return;
         tabla.innerHTML = '';
