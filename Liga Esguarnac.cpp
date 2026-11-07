@@ -467,89 +467,62 @@ svr.Options("/api/equipos", [](const httplib::Request& req, httplib::Response& r
 
     // Endpoint POST: Registrar o actualizar récord del equipo
 // Endpoint POST: Registrar o actualizar récord del equipo (con Puntos)
-    svr.Post("/api/actualizar_equipo", [](const httplib::Request& req, httplib::Response& res) {
+svr.Post("/api/actualizar_equipo", [](const httplib::Request& req, httplib::Response& res) {
     res.set_header("Access-Control-Allow-Origin", "*");
-    
     httplib::Client cli("https://liga-esguarnac-default-rtdb.firebaseio.com");
     cli.enable_server_certificate_verification(false);
     
     nlohmann::json datosRecibidos = nlohmann::json::parse(req.body);
-    std::string nombreBuscado = datosRecibidos["nombre"].get<std::string>();
+    std::string nombreBuscado = datosRecibidos.value("nombre", "");
     
-    // 1. Descargar la tabla de Firebase
     auto fire_get = cli.Get("/equipos.json");
-    
+    nlohmann::json listaEquipos = nlohmann::json::array();
     if (fire_get && fire_get->status == 200 && fire_get->body != "null") {
-        nlohmann::json listaEquipos = nlohmann::json::parse(fire_get->body);
-        bool encontrado = false;
-        
-        // 2. Buscar el equipo y sumar los nuevos datos a los que ya existen
-        for (auto& eq : listaEquipos) {
-            // Dentro de svr.Post("/api/actualizar_equipo", ...):
-if (eq["nombre"] == nombreBuscado) {
-    eq["jj"]  = eq.value("jj", 0)  + datosRecibidos.value("jj", 0);
-    eq["jg"]  = eq.value("jg", 0)  + datosRecibidos.value("jg", 0);
-    eq["jp"]  = eq.value("jp", 0)  + datosRecibidos.value("jp", 0);
-    eq["je"]  = eq.value("je", 0)  + datosRecibidos.value("je", 0);
-    eq["dif"] = eq.value("dif", 0) + datosRecibidos.value("dif", 0);
-    
-    // Puntos se mantienen: (JG * 3) + (JE * 1)
-    eq["pts"] = (eq["jg"].get<int>() * 3) + (eq["je"].get<int>() * 1);
-    encontrado = true;
-    break;
-}
-
-// Y dentro de svr.Post("/api/editar_equipo", ...):
-if (eq["nombre"] == nombreBuscado) {
-    eq["jj"]  = datosRecibidos.value("jj", 0);
-    eq["jg"]  = datosRecibidos.value("jg", 0);
-    eq["jp"]  = datosRecibidos.value("jp", 0);
-    eq["je"]  = datosRecibidos.value("je", 0);
-    eq["dif"] = datosRecibidos.value("dif", 0);
-    
-    // Puntos se mantienen: (JG * 3) + (JE * 1)
-    eq["pts"] = (eq["jg"].get<int>() * 3) + (eq["je"].get<int>() * 1);
-    encontrado = true;
-    break;
-}
-        }
-        
-        if (encontrado) {
-            // 3. Subir los datos ya sumados a Firebase
-            auto fire_put = cli.Put("/equipos.json", listaEquipos.dump(), "application/json");
-            if (fire_put && fire_put->status == 200) {
-                res.status = 200;
-                res.set_content("Actualizado correctamente", "text/plain");
-                return;
-            }
-        } else {
-            // Si el equipo no existe en Firebase, lo agregamos como nuevo
-            datosRecibidos["pts"] = (datosRecibidos.value("jg", 0) * 3) + (datosRecibidos.value("je", 0) * 1);
-            listaEquipos.push_back(datosRecibidos);
-            
-            auto fire_put = cli.Put("/equipos.json", listaEquipos.dump(), "application/json");
-            if (fire_put && fire_put->status == 200) {
-                res.status = 200;
-                res.set_content("Equipo nuevo creado", "text/plain");
-                return;
-            }
-        }
-    } else {
-        // Si la base de datos está totalmente vacía, creamos el primer equipo
-        nlohmann::json listaEquipos = nlohmann::json::array();
-        datosRecibidos["pts"] = (datosRecibidos.value("jg", 0) * 3) + (datosRecibidos.value("je", 0) * 1);
-        listaEquipos.push_back(datosRecibidos);
-        
-        auto fire_put = cli.Put("/equipos.json", listaEquipos.dump(), "application/json");
-        if (fire_put && fire_put->status == 200) {
-            res.status = 200;
-            res.set_content("Primer equipo creado", "text/plain");
-            return;
+        auto parsed = nlohmann::json::parse(fire_get->body);
+        if (parsed.is_array()) {
+            for (auto& el : parsed) if (!el.is_null()) listaEquipos.push_back(el);
+        } else if (parsed.is_object()) {
+            for (auto& el : parsed.items()) if (!el.value().is_null()) listaEquipos.push_back(el.value());
         }
     }
-    
-    res.status = 500;
-    res.set_content("Error al guardar en Firebase", "text/plain");
+
+    bool encontrado = false;
+    for (auto& eq : listaEquipos) {
+        if (eq.value("nombre", "") == nombreBuscado) {
+            eq["jj"]  = eq.value("jj", 0)  + datosRecibidos.value("jj", 0);
+            eq["jg"]  = eq.value("jg", 0)  + datosRecibidos.value("jg", 0);
+            eq["jp"]  = eq.value("jp", 0)  + datosRecibidos.value("jp", 0);
+            eq["je"]  = eq.value("je", 0)  + datosRecibidos.value("je", 0);
+            eq["dif"] = eq.value("dif", 0) + datosRecibidos.value("dif", 0);
+            
+            // Puntos: Ganados * 3 + Empatados * 1 (JJ no altera puntos)
+            eq["pts"] = (eq["jg"].get<int>() * 3) + (eq["je"].get<int>() * 1);
+            encontrado = true;
+            break;
+        }
+    }
+
+    // Si el equipo aún no existía en Firebase, lo creamos con sus 5 datos completos
+    if (!encontrado) {
+        nlohmann::json nuevoEq;
+        nuevoEq["nombre"] = nombreBuscado;
+        nuevoEq["jj"]  = datosRecibidos.value("jj", 0);
+        nuevoEq["jg"]  = datosRecibidos.value("jg", 0);
+        nuevoEq["jp"]  = datosRecibidos.value("jp", 0);
+        nuevoEq["je"]  = datosRecibidos.value("je", 0);
+        nuevoEq["dif"] = datosRecibidos.value("dif", 0);
+        nuevoEq["pts"] = (nuevoEq["jg"].get<int>() * 3) + (nuevoEq["je"].get<int>() * 1);
+        listaEquipos.push_back(nuevoEq);
+    }
+
+    auto fire_put = cli.Put("/equipos.json", listaEquipos.dump(), "application/json");
+    if (fire_put && fire_put->status == 200) {
+        res.status = 200;
+        res.set_content("Actualizado correctamente", "text/plain");
+    } else {
+        res.status = 500;
+        res.set_content("Error al guardar en Firebase", "text/plain");
+    }
 });
 // Endpoint POST: SOBRESCRIBIR récord (Botón Editar)
 svr.Post("/api/editar_equipo", [](const httplib::Request& req, httplib::Response& res) {
