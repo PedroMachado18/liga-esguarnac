@@ -849,36 +849,33 @@ const logosEquipos = {
     "Apocalipsis": "apocalipsis.png"
 };
 
+const listaOficialEquipos = [
+    "Bandoleros", "Warriors N", "Warriors B", "Elite", 
+    "Torno Miranda", "Hidroponias", "La Guardia", "Pandas", "Apocalipsis"
+];
+
 async function cargarEquipos() {
     try {
         const res = await fetch('https://liga-esguarnac.onrender.com/api/equipos', { cache: 'no-store' });
-        let datos = await res.json();
+        let datosCrudos = await res.json();
 
-        if (datos !== null) {
-            if (!Array.isArray(datos)) datos = Object.values(datos);
-            datos = datos.filter(item => item !== null && typeof item === 'object');
-        } else {
-            datos = [];
+        let datosFirebase = [];
+        if (datosCrudos !== null) {
+            datosFirebase = Array.isArray(datosCrudos) ? datosCrudos : Object.values(datosCrudos);
+            datosFirebase = datosFirebase.filter(item => item !== null && typeof item === 'object');
         }
 
-        // Pre-calcular PTS, JJ y DIF para ordenar del 1ro al 9no lugar
-        datos.forEach(eq => {
-            eq.jg = parseInt(eq.jg) || 0;
-            eq.jp = parseInt(eq.jp) || 0;
-            eq.je = parseInt(eq.je) || 0;
-            
-            // Si ya tiene JJ guardado lo usa; si es 0, suma JG + JP + JE
-            eq.jj = parseInt(eq.jj) || (eq.jg + eq.jp + eq.je);
+        // Unimos los 9 equipos oficiales con sus datos reales en Firebase
+        let datos = listaOficialEquipos.map(nombreOficial => {
+            let eq = datosFirebase.find(e => e.nombre === nombreOficial) || {};
+            let jj  = parseInt(eq.jj) || 0;
+            let jg  = parseInt(eq.jg) || 0;
+            let jp  = parseInt(eq.jp) || 0;
+            let je  = parseInt(eq.je) || 0;
+            let dif = parseInt(eq.dif) || 0;
+            let pts = (jg * 3) + (je * 1);
 
-            // Si tiene DIF directo lo usa; si tenía CF y CC viejos en Firebase, los resta
-            if (eq.dif !== undefined) {
-                eq.dif = parseInt(eq.dif) || 0;
-            } else {
-                eq.dif = (parseInt(eq.cf) || 0) - (parseInt(eq.cc) || 0);
-            }
-
-            // Puntos intactos: Ganados * 3 + Empatados * 1 (JJ no afecta)
-            eq.pts = (eq.jg * 3) + (eq.je * 1);
+            return { nombre: nombreOficial, jj, jg, jp, je, dif, pts };
         });
 
         // Ordenar por Puntos (Mayor a menor) y desempate por Diferencia (DIF)
@@ -893,9 +890,7 @@ async function cargarEquipos() {
 
         datos.forEach((equipo, index) => {
             const posicion = index + 1;
-            if (posicion > 9) return; // Limita del 1 al 9
-
-            const rutaLogo = logosEquipos[equipo.nombre] || 'logo.png';
+            const rutaLogo = (typeof logosEquipos !== 'undefined' && logosEquipos[equipo.nombre]) ? logosEquipos[equipo.nombre] : 'logo.png';
             const difTexto = equipo.dif > 0 ? `+${equipo.dif}` : equipo.dif;
 
             const fila = `<tr>
@@ -926,18 +921,6 @@ async function cargarEquipos() {
     }
 }
 
-// Rellena las casillas de arriba al tocar el botón naranja "Editar" de un equipo
-function prepararEdicionEquipo(nombre, jj, jg, jp, je, dif) {
-    document.getElementById('nombre-eq').value = nombre;
-    document.getElementById('jj-eq').value = jj;
-    document.getElementById('jg-eq').value = jg;
-    document.getElementById('jp-eq').value = jp;
-    document.getElementById('je-eq').value = je;
-    document.getElementById('dif-eq').value = dif;
-}
-
-// Botón verde: Sumar al Récord
-// Lee las casillas del formulario de la Tabla de Posiciones sin importar qué ID tengan
 function obtenerInputsEquipos() {
     const btn = document.querySelector('button[onclick*="actualizarEquipo"]');
     const contenedor = btn ? btn.parentElement : document;
@@ -962,12 +945,11 @@ async function actualizarEquipo() {
     const { select, inputs } = obtenerInputsEquipos();
     if (!select || inputs.length < 5) return;
 
-    const jjVal = inputs[0].value;
-    const jg = parseInt(inputs[1].value) || 0;
-    const jp = parseInt(inputs[2].value) || 0;
-    const je = parseInt(inputs[3].value) || 0;
+    const jj  = parseInt(inputs[0].value) || 0;
+    const jg  = parseInt(inputs[1].value) || 0;
+    const jp  = parseInt(inputs[2].value) || 0;
+    const je  = parseInt(inputs[3].value) || 0;
     const dif = parseInt(inputs[4].value) || 0;
-    const jj = jjVal !== '' ? (parseInt(jjVal) || 0) : (jg + jp + je);
 
     const payload = { nombre: select.value, jj, jg, jp, je, dif };
 
@@ -985,12 +967,11 @@ async function guardarEdicionEquipo() {
     const { select, inputs } = obtenerInputsEquipos();
     if (!select || inputs.length < 5) return;
 
-    const jjVal = inputs[0].value;
-    const jg = parseInt(inputs[1].value) || 0;
-    const jp = parseInt(inputs[2].value) || 0;
-    const je = parseInt(inputs[3].value) || 0;
+    const jj  = parseInt(inputs[0].value) || 0;
+    const jg  = parseInt(inputs[1].value) || 0;
+    const jp  = parseInt(inputs[2].value) || 0;
+    const je  = parseInt(inputs[3].value) || 0;
     const dif = parseInt(inputs[4].value) || 0;
-    const jj = jjVal !== '' ? (parseInt(jjVal) || 0) : (jg + jp + je);
 
     const payload = { nombre: select.value, jj, jg, jp, je, dif };
 
